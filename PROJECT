@@ -3,4 +3,22 @@ layout:
 - go.kubebuilder.io/v3
 projectName: tenet
 repo: github.com/cybozu-go/tenet
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: cybozu.io
+  group: tenet
+  kind: NetworkPolicyTemplate
+  path: github.com/cybozu-go/tenet/api/v1beta1
+  version: v1beta1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: cybozu.io
+  group: tenet
+  kind: NetworkPolicyAdmissionRule
+  path: github.com/cybozu-go/tenet/api/v1beta1
+  version: v1beta1
 version: "3"

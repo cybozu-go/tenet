@@ -1,0 +1,6 @@
+apiVersion: tenet.cybozu.io/v1beta1
+kind: NetworkPolicyTemplate
+metadata:
+  name: networkpolicytemplate-sample
+spec:
+  # TODO(user): Add fields here

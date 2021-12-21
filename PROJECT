@@ -1,0 +1,6 @@
+domain: cybozu.io
+layout:
+- go.kubebuilder.io/v3
+projectName: tenet
+repo: github.com/cybozu-go/tenet
+version: "3"

@@ -20,39 +20,41 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// NetworkPolicyTemplateSpec defines the desired state of NetworkPolicyTemplate
-type NetworkPolicyTemplateSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of NetworkPolicyTemplate. Edit networkpolicytemplate_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
-
 // NetworkPolicyTemplateStatus defines the observed state of NetworkPolicyTemplate
-type NetworkPolicyTemplateStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+//+kubebuilder:validation:Enum=ok;invalid
+type NetworkPolicyTemplateStatus string
+
+const (
+	NetworkPolicyTemplateOK      NetworkPolicyTemplateStatus = "ok"
+	NetworkPolicyTemplateInvalid NetworkPolicyTemplateStatus = "invalid"
+)
+
+// NetworkPolicyTemplateSpec defines the desired state of NetworkPolicyTemplate.
+type NetworkPolicyTemplateSpec struct {
+	// PolicyTemplate is a template for creating NetworkPolicies
+	PolicyTemplate string `json:"policyTemplate,omitempty"`
 }
 
 //+kubebuilder:object:root=true
+//+kubebuilder:resource:scope=Cluster
 //+kubebuilder:subresource:status
 
-// NetworkPolicyTemplate is the Schema for the networkpolicytemplates API
+// NetworkPolicyTemplate is the Schema for the networkpolicytemplates API.
 type NetworkPolicyTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   NetworkPolicyTemplateSpec   `json:"spec,omitempty"`
+	// Spec is the spec for the NetworkPolicyTemplate
+	Spec NetworkPolicyTemplateSpec `json:"spec,omitempty"`
+
+	// Status represents the status of the NetworkPolicyTemplate
+	// +optional
 	Status NetworkPolicyTemplateStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// NetworkPolicyTemplateList contains a list of NetworkPolicyTemplate
+// NetworkPolicyTemplateList contains a list of NetworkPolicyTemplate.
 type NetworkPolicyTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

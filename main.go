@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
 	"github.com/cybozu-go/tenet/controllers"
 	//+kubebuilder:scaffold:imports
@@ -43,7 +44,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
+	utilruntime.Must(ciliumv2.AddToScheme(scheme))
 	utilruntime.Must(tenetv1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -80,6 +81,7 @@ func main() {
 
 	if err = (&controllers.NetworkPolicyTemplateReconciler{
 		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("NetworkPolicyTemplate"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NetworkPolicyTemplate")

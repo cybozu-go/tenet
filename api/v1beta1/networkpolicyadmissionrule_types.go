@@ -23,7 +23,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// NetworkPolicyAdmissionRuleSpec defines the desired state of NetworkPolicyAdmissionRule
+// NetworkPolicyAdmissionRuleSpec defines the desired state of NetworkPolicyAdmissionRule.
 type NetworkPolicyAdmissionRuleSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -32,7 +32,7 @@ type NetworkPolicyAdmissionRuleSpec struct {
 	Foo string `json:"foo,omitempty"`
 }
 
-// NetworkPolicyAdmissionRuleStatus defines the observed state of NetworkPolicyAdmissionRule
+// NetworkPolicyAdmissionRuleStatus defines the observed state of NetworkPolicyAdmissionRule.
 type NetworkPolicyAdmissionRuleStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -41,7 +41,7 @@ type NetworkPolicyAdmissionRuleStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// NetworkPolicyAdmissionRule is the Schema for the networkpolicyadmissionrules API
+// NetworkPolicyAdmissionRule is the Schema for the networkpolicyadmissionrules API.
 type NetworkPolicyAdmissionRule struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,7 +52,7 @@ type NetworkPolicyAdmissionRule struct {
 
 //+kubebuilder:object:root=true
 
-// NetworkPolicyAdmissionRuleList contains a list of NetworkPolicyAdmissionRule
+// NetworkPolicyAdmissionRuleList contains a list of NetworkPolicyAdmissionRule.
 type NetworkPolicyAdmissionRuleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

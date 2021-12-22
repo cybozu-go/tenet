@@ -4,6 +4,7 @@ CST_VERSION = 1.10.0
 MDBOOK_VERSION = 0.4.10
 BIN_DIR := $(shell pwd)/bin
 MDBOOK := $(BIN_DIR)/mdbook
+CILIUM_VERSION = $(shell awk '/github\.com\/cilium\/cilium/ {print $$2}' go.mod)
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
@@ -67,8 +68,13 @@ lint:
 	pre-commit install
 	pre-commit run --all-files
 
+.PHONY: crds
+crds:
+	mkdir -p config/crd/third
+	curl -fsL -o config/crd/third/ciliumnetworkpolicies.yaml https://github.com/cilium/cilium/raw/$(CILIUM_VERSION)/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumnetworkpolicies.yaml
+
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
+test: manifests generate fmt vet crds envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build

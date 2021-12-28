@@ -1,0 +1,9 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: "ingress-with-forbidden-cidr"
+spec:
+  endpointSelector: {}
+  ingress:
+  - fromCIDR:
+    - 10.76.16.0/20

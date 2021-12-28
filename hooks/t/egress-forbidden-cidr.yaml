@@ -1,0 +1,9 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: "egress-with-forbidden-cidr"
+spec:
+  endpointSelector: {}
+  egress:
+  - toCIDR:
+    - 10.72.16.0/20

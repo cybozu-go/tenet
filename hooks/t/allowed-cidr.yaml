@@ -1,0 +1,9 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: "allowed-cidrset"
+spec:
+  endpointSelector: {}
+  egress:
+  - toCIDRSet:
+    - cidr: 10.172.16.0/20

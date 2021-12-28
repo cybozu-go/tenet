@@ -20,25 +20,47 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+// NetworkPolicyAdmissionRuleStatus defines the observed state of NetworkPolicyAdmissionRule.
+type NetworkPolicyAdmissionRuleStatus string
+
+// NetworkPolicyAdmissionRuleType defines the type of network connection the rules apply to.
+type NetworkPolicyAdmissionRuleType string
+
+const (
+	NetworkPolicyAdmissionRuleOK NetworkPolicyAdmissionRuleStatus = "ok"
+
+	NetworkPolicyAdmissionRuleTypeAll     NetworkPolicyAdmissionRuleType = "all"
+	NetworkPolicyAdmissionRuleTypeEgress  NetworkPolicyAdmissionRuleType = "egress"
+	NetworkPolicyAdmissionRuleTypeIngress NetworkPolicyAdmissionRuleType = "ingress"
+)
 
 // NetworkPolicyAdmissionRuleSpec defines the desired state of NetworkPolicyAdmissionRule.
 type NetworkPolicyAdmissionRuleSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of NetworkPolicyAdmissionRule. Edit networkpolicyadmissionrule_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// NamespaceSelector qualifies which namespaces the rules should apply to.
+	NamespaceSelector NetworkPolicyAdmissionRuleNamespaceSelector `json:"namespaceSelector,omitempty"`
+	// ForbiddenIPRanges defines IP ranges whose usage must be forbidden in network policies.
+	ForbiddenIPRanges []NetworkPolicyAdmissionRuleForbiddenIPRanges `json:"forbiddenIPRanges,omitempty"`
 }
 
-// NetworkPolicyAdmissionRuleStatus defines the observed state of NetworkPolicyAdmissionRule.
-type NetworkPolicyAdmissionRuleStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+// NetworkPolicyAdmissionRuleNamespaceSelector defines how namespaces should be selected.
+type NetworkPolicyAdmissionRuleNamespaceSelector struct {
+	// ExcludeLabels defines labels through which a namespace should be excluded.
+	ExcludeLabels map[string]string `json:"excludeLabels,omitempty"`
+}
+
+// NetworkPolicyAdmissionRuleForbiddenIPRanges defines forbidden IP ranges.
+type NetworkPolicyAdmissionRuleForbiddenIPRanges struct {
+	// CIDR range.
+	CIDR string `json:"cidr,omitempty"`
+
+	// Type of connection the rule applies to.
+	// +kubebuilder:validation:Enum=egress;ingress;all
+	// +default:"all"
+	Type NetworkPolicyAdmissionRuleType `json:"type,omitempty"`
 }
 
 //+kubebuilder:object:root=true
+//+kubebuilder:resource:scope=Cluster
 //+kubebuilder:subresource:status
 
 // NetworkPolicyAdmissionRule is the Schema for the networkpolicyadmissionrules API.

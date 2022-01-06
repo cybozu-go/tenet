@@ -5,7 +5,7 @@ metadata:
 specs:
   - endpointSelector: {}
     egress:
-    - toCidrSet:
+    - toCIDRSet:
       - cidr: 10.72.16.0/20
       - cidr: 10.82.16.0/20
       - cidr: 10.92.16.0/20

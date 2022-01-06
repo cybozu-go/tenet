@@ -34,4 +34,4 @@ testbin/*
 *.swp
 *.swo
 *~
-config/crd/third
+test

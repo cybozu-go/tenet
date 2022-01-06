@@ -13,8 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
+	"github.com/cybozu-go/tenet/pkg/cilium"
 )
 
 var (
@@ -36,7 +36,7 @@ var (
 
 func createCiliumNetworkPolicy(ctx context.Context, nsName string, contents []byte) error {
 	y := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(contents), len(contents))
-	cnp := &ciliumv2.CiliumNetworkPolicy{}
+	cnp := cilium.CiliumNetworkPolicy()
 	err := y.Decode(cnp)
 	Expect(err).NotTo(HaveOccurred())
 	cnp.SetNamespace(nsName)

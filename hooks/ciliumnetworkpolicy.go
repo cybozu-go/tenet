@@ -2,18 +2,19 @@ package hooks
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
-	"github.com/cilium/cilium/pkg/policy/api"
 	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
+	"github.com/cybozu-go/tenet/pkg/cilium"
 )
 
 //+kubebuilder:webhook:path=/validate-cilium-io-v2-ciliumnetworkpolicy,mutating=false,failurePolicy=fail,sideEffects=None,groups=cilium.io,resources=ciliumnetworkpolicies,verbs=create;update,versions=v2,name=vciliumnetworkpolicy.kb.io,admissionReviewVersions={v1}
@@ -27,12 +28,12 @@ var _ admission.Handler = &ciliumNetworkPolicyValidator{}
 
 // Handler validates CiliumNetworkPolicies.
 func (v *ciliumNetworkPolicyValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	cnp := &ciliumv2.CiliumNetworkPolicy{}
+	cnp := cilium.CiliumNetworkPolicy()
 	if err := v.dec.Decode(req, cnp); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 	ns := &corev1.Namespace{}
-	if err := v.Get(ctx, client.ObjectKey{Name: cnp.Namespace}, ns); client.IgnoreNotFound(err) != nil {
+	if err := v.Get(ctx, client.ObjectKey{Name: cnp.GetNamespace()}, ns); client.IgnoreNotFound(err) != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 	var nparl tenetv1beta1.NetworkPolicyAdmissionRuleList
@@ -57,19 +58,25 @@ func (v *ciliumNetworkPolicyValidator) Handle(ctx context.Context, req admission
 	return v.validate(egressPolicies, ingressPolicies, egressFilters, ingressFilters)
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPolicies(cnp *ciliumv2.CiliumNetworkPolicy) ([]*net.IPNet, []*net.IPNet, error) {
+func (v *ciliumNetworkPolicyValidator) gatherPolicies(cnp *unstructured.Unstructured) ([]*net.IPNet, []*net.IPNet, error) {
 	egressPolicies := []*net.IPNet{}
 	ingressPolicies := []*net.IPNet{}
-	if cnp.Spec != nil {
-		e, i, err := v.gatherPoliciesFromRule(cnp.Spec)
+	cnpSpec, found, _ := unstructured.NestedMap(cnp.UnstructuredContent(), "spec")
+	if found {
+		e, i, err := v.gatherPoliciesFromRule(cnpSpec)
 		if err != nil {
 			return nil, nil, err
 		}
 		egressPolicies = append(egressPolicies, e...)
 		ingressPolicies = append(ingressPolicies, i...)
 	}
-	if cnp.Specs != nil {
-		for _, rule := range cnp.Specs {
+	cnpSpecs, found, _ := unstructured.NestedSlice(cnp.UnstructuredContent(), "specs")
+	if found {
+		for _, cnpSpec := range cnpSpecs {
+			rule, ok := cnpSpec.(map[string]interface{})
+			if !ok {
+				return nil, nil, fmt.Errorf("unexpected spec format")
+			}
 			e, i, err := v.gatherPoliciesFromRule(rule)
 			if err != nil {
 				return nil, nil, err
@@ -81,64 +88,102 @@ func (v *ciliumNetworkPolicyValidator) gatherPolicies(cnp *ciliumv2.CiliumNetwor
 	return egressPolicies, ingressPolicies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRule(rule *api.Rule) ([]*net.IPNet, []*net.IPNet, error) {
-	egressPolicies, err := v.gatherEgressPolicies(rule)
+func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRule(rule map[string]interface{}) ([]*net.IPNet, []*net.IPNet, error) {
+	egressPolicies, err := v.gatherPoliciesFromRuleType(rule, cilium.EgressRule)
 	if err != nil {
 		return nil, nil, err
 	}
-	ingressPolicies, err := v.gatherIngressPolicies(rule)
+	ingressPolicies, err := v.gatherPoliciesFromRuleType(rule, cilium.IngressRule)
 	if err != nil {
 		return nil, nil, err
 	}
 	return egressPolicies, ingressPolicies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherEgressPolicies(rule *api.Rule) ([]*net.IPNet, error) {
-	if rule.Egress == nil {
+func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRuleType(rule map[string]interface{}, rt cilium.RuleType) ([]*net.IPNet, error) {
+	subRule := rule[rt.Type]
+	if subRule == nil {
 		return nil, nil
 	}
-	egressPolicies := []*net.IPNet{}
-	for _, e := range rule.Egress {
-		for _, cidrString := range e.ToCIDR {
-			_, cidr, err := net.ParseCIDR(string(cidrString))
-			if err != nil {
-				return nil, err
-			}
-			egressPolicies = append(egressPolicies, cidr)
-		}
-		for _, cidrString := range e.ToCIDRSet {
-			_, cidr, err := net.ParseCIDR(string(cidrString.Cidr))
-			if err != nil {
-				return nil, err
-			}
-			egressPolicies = append(egressPolicies, cidr)
-		}
+	policies := []*net.IPNet{}
+	subRules, ok := subRule.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected policies format")
 	}
-	return egressPolicies, nil
+	for _, r := range subRules {
+		rMap, ok := r.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected policy format")
+		}
+		p, err := v.gatherPoliciesFromCIDRRule(rMap[rt.CIDRKey])
+		if err != nil {
+			return nil, err
+		}
+		policies = append(policies, p...)
+
+		p, err = v.gatherPoliciesFromCIDRSetRule(rMap[rt.CIDRSetKey])
+		if err != nil {
+			return nil, err
+		}
+		policies = append(policies, p...)
+	}
+	return policies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherIngressPolicies(rule *api.Rule) ([]*net.IPNet, error) {
-	if rule.Ingress == nil {
+func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRRule(rule interface{}) ([]*net.IPNet, error) {
+	if rule == nil {
 		return nil, nil
 	}
-	ingressPolicies := []*net.IPNet{}
-	for _, i := range rule.Ingress {
-		for _, cidrString := range i.FromCIDR {
-			_, cidr, err := net.ParseCIDR(string(cidrString))
-			if err != nil {
-				return nil, err
-			}
-			ingressPolicies = append(ingressPolicies, cidr)
-		}
-		for _, cidrString := range i.FromCIDRSet {
-			_, cidr, err := net.ParseCIDR(string(cidrString.Cidr))
-			if err != nil {
-				return nil, err
-			}
-			ingressPolicies = append(ingressPolicies, cidr)
-		}
+	policies := []*net.IPNet{}
+	cidrStrings, ok := rule.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected CIDR strings format")
 	}
-	return ingressPolicies, nil
+	for _, cidrString := range cidrStrings {
+		if cidrString == nil {
+			continue
+		}
+		cidrString, ok := cidrString.(string)
+		if !ok {
+			return nil, fmt.Errorf("unexpected CIDR string format")
+		}
+		_, cidr, err := net.ParseCIDR(cidrString)
+		if err != nil {
+			return nil, err
+		}
+		policies = append(policies, cidr)
+	}
+	return policies, nil
+}
+
+func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRSetRule(rule interface{}) ([]*net.IPNet, error) {
+	if rule == nil {
+		return nil, nil
+	}
+	cidrSetRules, ok := rule.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected CIDRSet policies format")
+	}
+	policies := []*net.IPNet{}
+	for _, cidrSetRule := range cidrSetRules {
+		cidrSetRule, ok := cidrSetRule.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected CIDRSet format")
+		}
+		if cidrSetRule["cidr"] == nil {
+			continue
+		}
+		cidrString, ok := cidrSetRule["cidr"].(string)
+		if !ok {
+			return nil, fmt.Errorf("unexpected CIDR string format")
+		}
+		_, cidr, err := net.ParseCIDR(cidrString)
+		if err != nil {
+			return nil, err
+		}
+		policies = append(policies, cidr)
+	}
+	return policies, nil
 }
 
 func (v *ciliumNetworkPolicyValidator) gatherFilters(nparl *tenetv1beta1.NetworkPolicyAdmissionRuleList) ([]*net.IPNet, []*net.IPNet, error) {

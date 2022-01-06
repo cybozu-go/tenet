@@ -24,6 +24,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	cacheclient "github.com/cybozu-go/tenet/pkg/client"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -32,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
 	"github.com/cybozu-go/tenet/controllers"
 	"github.com/cybozu-go/tenet/hooks"
@@ -46,7 +46,6 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(ciliumv2.AddToScheme(scheme))
 	utilruntime.Must(tenetv1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -70,6 +69,7 @@ func main() {
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
+		NewClient:              cacheclient.NewCachingClient,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
@@ -86,11 +86,12 @@ func main() {
 		setupLog.Error(err, "unable to create admission decoder")
 	}
 
+	ctx := ctrl.SetupSignalHandler()
 	if err = (&controllers.NetworkPolicyTemplateReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("NetworkPolicyTemplate"),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NetworkPolicyTemplate")
 		os.Exit(1)
 	}

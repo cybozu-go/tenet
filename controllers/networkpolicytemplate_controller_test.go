@@ -6,13 +6,17 @@ import (
 	"strings"
 	"time"
 
-	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
+	"github.com/cybozu-go/tenet/pkg/cilium"
+	cacheclient "github.com/cybozu-go/tenet/pkg/client"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -27,6 +31,16 @@ spec:
     - toEndpoints:
         - matchLabels:
             "k8s:io.kubernetes.pod.namespace": {{.Name}}
+`
+	expectedCNPTemplate = `
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+spec:
+    endpointSelector: {}
+    egress:
+    - toEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": %s
 `
 	bmcDenyTemplate = `
 apiVersion: cilium.io/v2
@@ -88,6 +102,7 @@ var _ = Describe("Tenet controller", func() {
 			Scheme:             scheme,
 			LeaderElection:     false,
 			MetricsBindAddress: "0",
+			NewClient:          cacheclient.NewCachingClient,
 		})
 		Expect(err).NotTo(HaveOccurred())
 
@@ -96,7 +111,7 @@ var _ = Describe("Tenet controller", func() {
 			Log:    ctrl.Log.WithName("controllers").WithName("NetworkPolicyTemplate"),
 			Scheme: mgr.GetScheme(),
 		}
-		err = nptr.SetupWithManager(mgr)
+		err = nptr.SetupWithManager(ctx, mgr)
 		Expect(err).NotTo(HaveOccurred())
 
 		ctx, cancel := context.WithCancel(ctx)
@@ -121,9 +136,9 @@ var _ = Describe("Tenet controller", func() {
 		shouldCreateNetworkPolicyTemplate(ctx, nptName, intraNSTemplate)
 		shouldCreateNamespace(ctx, nsName, []string{nptName})
 
-		var cnp *ciliumv2.CiliumNetworkPolicy
+		var cnp *unstructured.Unstructured
 		Eventually(func() error {
-			cnp = &ciliumv2.CiliumNetworkPolicy{}
+			cnp = cilium.CiliumNetworkPolicy()
 			key := client.ObjectKey{
 				Namespace: nsName,
 				Name:      nptName,
@@ -131,7 +146,12 @@ var _ = Describe("Tenet controller", func() {
 			return k8sClient.Get(ctx, key, cnp)
 		}).Should(Succeed())
 
-		Expect(cnp.Spec.Egress[0].ToEndpoints[0].MatchLabels["k8s.io.kubernetes.pod.namespace"]).To(Equal(nsName))
+		expectedCNPString := fmt.Sprintf(expectedCNPTemplate, nsName)
+		expectedCNP := cilium.CiliumNetworkPolicy()
+		y := yaml.NewYAMLOrJSONDecoder(strings.NewReader(expectedCNPString), len(expectedCNPString))
+		err := y.Decode(expectedCNP)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(equality.Semantic.DeepEqual(cnp.UnstructuredContent()["spec"], expectedCNP.UnstructuredContent()["spec"])).To(BeTrue())
 
 		Eventually(func() tenetv1beta1.NetworkPolicyTemplateStatus {
 			npt := &tenetv1beta1.NetworkPolicyTemplate{}
@@ -151,7 +171,7 @@ var _ = Describe("Tenet controller", func() {
 		shouldCreateNamespace(ctx, nsName, []string{})
 
 		Consistently(func() error {
-			cnp := &ciliumv2.CiliumNetworkPolicy{}
+			cnp := cilium.CiliumNetworkPolicy()
 			key := client.ObjectKey{
 				Namespace: nsName,
 				Name:      nptName,
@@ -172,7 +192,7 @@ var _ = Describe("Tenet controller", func() {
 
 		Eventually(func() error {
 			for _, nptName := range optins {
-				cnp := &ciliumv2.CiliumNetworkPolicy{}
+				cnp := cilium.CiliumNetworkPolicy()
 				key := client.ObjectKey{
 					Namespace: nsName,
 					Name:      nptName,
@@ -191,9 +211,9 @@ var _ = Describe("Tenet controller", func() {
 		shouldCreateNetworkPolicyTemplate(ctx, nptName, intraNSTemplate)
 		shouldCreateNamespace(ctx, nsName, []string{nptName})
 
-		var cnp *ciliumv2.CiliumNetworkPolicy
+		var cnp *unstructured.Unstructured
 		Eventually(func() error {
-			cnp = &ciliumv2.CiliumNetworkPolicy{}
+			cnp = cilium.CiliumNetworkPolicy()
 			key := client.ObjectKey{
 				Namespace: nsName,
 				Name:      nptName,
@@ -212,7 +232,7 @@ var _ = Describe("Tenet controller", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() error {
-			cnp = &ciliumv2.CiliumNetworkPolicy{}
+			cnp = cilium.CiliumNetworkPolicy()
 			key := client.ObjectKey{
 				Namespace: nsName,
 				Name:      npt.Name,
@@ -220,8 +240,12 @@ var _ = Describe("Tenet controller", func() {
 			if err := k8sClient.Get(ctx, key, cnp); err != nil {
 				return err
 			}
-			if cnp.Spec.EgressDeny == nil || cnp.Spec.Egress != nil {
-				return fmt.Errorf("wrong CiliumNetworkPolicy spec. Expected %v got %v", npt.Spec.PolicyTemplate, cnp.Spec)
+			_, hasEgressDeny, err := unstructured.NestedSlice(cnp.UnstructuredContent(), "spec", "egressDeny")
+			Expect(err).NotTo(HaveOccurred())
+			_, hasEgress, err := unstructured.NestedSlice(cnp.UnstructuredContent(), "spec", "egress")
+			Expect(err).NotTo(HaveOccurred())
+			if !hasEgressDeny && !hasEgress {
+				return fmt.Errorf("wrong CiliumNetworkPolicy spec. Expected %v got %v", npt.Spec.PolicyTemplate, cnp.UnstructuredContent()["spec"])
 			}
 			return nil
 		}).Should(Succeed())
@@ -233,30 +257,33 @@ var _ = Describe("Tenet controller", func() {
 		shouldCreateNetworkPolicyTemplate(ctx, nptName, intraNSTemplate)
 		shouldCreateNamespace(ctx, nsName, []string{nptName})
 
-		var cnp *ciliumv2.CiliumNetworkPolicy
+		var cnp *unstructured.Unstructured
 		Eventually(func() error {
-			cnp = &ciliumv2.CiliumNetworkPolicy{}
+			cnp = cilium.CiliumNetworkPolicy()
 			key := client.ObjectKey{
 				Namespace: nsName,
 				Name:      nptName,
 			}
 			return k8sClient.Get(ctx, key, cnp)
 		}).Should(Succeed())
-
-		cnp.Spec.Egress[0].ToEndpoints[0].MatchLabels["k8s.io.kubernetes.pod.namespace"] = "kube-system"
+		unstructured.RemoveNestedField(cnp.UnstructuredContent(), "spec", "egress")
 		err := k8sClient.Update(ctx, cnp)
 		Expect(err).NotTo(HaveOccurred())
 
-		Eventually(func() string {
-			cnp = &ciliumv2.CiliumNetworkPolicy{}
+		Eventually(func() error {
+			cnp = cilium.CiliumNetworkPolicy()
 			key := client.ObjectKey{
 				Namespace: nsName,
 				Name:      nptName,
 			}
 			err := k8sClient.Get(ctx, key, cnp)
 			Expect(err).NotTo(HaveOccurred())
-			return cnp.Spec.Egress[0].ToEndpoints[0].MatchLabels["k8s.io.kubernetes.pod.namespace"]
-		}).Should(Equal(nsName))
+			_, hasEgress, err := unstructured.NestedSlice(cnp.UnstructuredContent(), "spec", "egress")
+			if !hasEgress || err != nil {
+				return fmt.Errorf("CiliumNetworkPolicy not reconciled")
+			}
+			return nil
+		}).Should(Succeed())
 	})
 
 	It("should cleanup CiliumNetworkPolicy upon opt-out", func() {
@@ -265,7 +292,7 @@ var _ = Describe("Tenet controller", func() {
 		shouldCreateNetworkPolicyTemplate(ctx, nptName, intraNSTemplate)
 		shouldCreateNamespace(ctx, nsName, []string{nptName})
 
-		cnp := &ciliumv2.CiliumNetworkPolicy{}
+		cnp := cilium.CiliumNetworkPolicy()
 		key := client.ObjectKey{
 			Namespace: nsName,
 			Name:      nptName,
@@ -305,7 +332,7 @@ var _ = Describe("Tenet controller", func() {
 		err := k8sClient.Get(ctx, nptKey, npt)
 		Expect(err).NotTo(HaveOccurred())
 
-		cnp := &ciliumv2.CiliumNetworkPolicy{}
+		cnp := cilium.CiliumNetworkPolicy()
 		key := client.ObjectKey{
 			Namespace: nsName,
 			Name:      nptName,
@@ -345,7 +372,7 @@ var _ = Describe("Tenet controller", func() {
 		}).Should(Equal(tenetv1beta1.NetworkPolicyTemplateInvalid))
 
 		Consistently(func() error {
-			cnp := &ciliumv2.CiliumNetworkPolicy{}
+			cnp := cilium.CiliumNetworkPolicy()
 			key := client.ObjectKey{
 				Namespace: nsName,
 				Name:      nptName,

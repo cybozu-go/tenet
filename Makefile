@@ -5,7 +5,7 @@ CST_VERSION = 1.10.0
 MDBOOK_VERSION = 0.4.10
 BIN_DIR := $(shell pwd)/bin
 MDBOOK := $(BIN_DIR)/mdbook
-CILIUM_VERSION = $(shell awk '/github\.com\/cilium\/cilium/ {print $$2}' go.mod)
+CILIUM_VERSION = v1.10.6
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
@@ -71,15 +71,15 @@ lint:
 
 .PHONY: crds
 crds:
-	mkdir -p config/crd/third
-	curl -fsL -o config/crd/third/ciliumnetworkpolicies.yaml https://github.com/cilium/cilium/raw/$(CILIUM_VERSION)/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumnetworkpolicies.yaml
+	mkdir -p test/crd/
+	curl -fsL -o test/crd/ciliumnetworkpolicies.yaml https://github.com/cilium/cilium/raw/$(CILIUM_VERSION)/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumnetworkpolicies.yaml
 
 .PHONY: test
 test: manifests generate fmt vet crds setup-envtest ## Run tests.
 	source <($(SETUP_ENVTEST) use -p env); \
-		go test -v -count 1 -race ./controllers -ginkgo.progress -ginkgo.v -ginkgo.failFast
+		go test -v -count 1 -race ./controllers -ginkgo.progress -ginkgo.v -ginkgo.failFast -coverprofile controllers-cover.out
 	source <($(SETUP_ENVTEST) use -p env); \
-		go test -v -count 1 -race ./hooks -ginkgo.progress -ginkgo.v
+		go test -v -count 1 -race ./hooks -ginkgo.progress -ginkgo.v -coverprofile hooks-cover.out
 
 ##@ Build
 

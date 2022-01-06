@@ -1,4 +1,5 @@
 CTRL_TOOLS_VERSION=0.7.0
+HELM_VERSION = 3.7.1
 KUSTOMIZE_VERSION = 4.4.1
 CST_VERSION = 1.10.0
 MDBOOK_VERSION = 0.4.10
@@ -47,8 +48,10 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: controller-gen kustomize ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/crds > charts/tenet/crds/tenet.cybozu.io_crds.yaml
+	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/templates > charts/tenet/templates/generated/generated.yaml
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -131,6 +134,15 @@ $(KUSTOMIZE):
 	mkdir -p $(BIN_DIR)
 	curl -fsL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv$(KUSTOMIZE_VERSION)/kustomize_v$(KUSTOMIZE_VERSION)_linux_amd64.tar.gz | \
 	tar -C $(BIN_DIR) -xzf -
+
+HELM := $(BIN_DIR)/helm
+.PHONY: helm
+helm: $(HELM) ## Download helm locally if necessary.
+
+$(HELM):
+	mkdir -p $(BIN_DIR)
+	curl -L -sS https://get.helm.sh/helm-v$(HELM_VERSION)-linux-amd64.tar.gz \
+	  | tar xz -C $(BIN_DIR) --strip-components 1 linux-amd64/helm
 
 ENVTEST = $(BIN_DIR)/setup-envtest
 .PHONY: envtest

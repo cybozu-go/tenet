@@ -1,0 +1,297 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-leader-election-role'
+  namespace: '{{ .Release.Namespace }}'
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-manager-role'
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cilium.io
+  resources:
+  - ciliumnetworkpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-metrics-reader'
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-proxy-role'
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-leader-election-rolebinding'
+  namespace: '{{ .Release.Namespace }}'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: '{{ template "tenet.fullname" . }}-leader-election-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ template "tenet.fullname" . }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-manager-rolebinding'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ template "tenet.fullname" . }}-manager-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ template "tenet.fullname" . }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-proxy-rolebinding'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ template "tenet.fullname" . }}-proxy-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ template "tenet.fullname" . }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    control-plane: controller-manager
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-controller-manager-metrics-service'
+  namespace: '{{ .Release.Namespace }}'
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    control-plane: controller-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-webhook-service'
+  namespace: '{{ .Release.Namespace }}'
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    control-plane: controller-manager
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ template "tenet.fullname"
+      . }}-serving-cert'
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+  name: '{{ template "tenet.fullname" . }}-validating-webhook-configuration'
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ template "tenet.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-cilium-io-v2-ciliumnetworkpolicy
+  failurePolicy: Fail
+  name: vciliumnetworkpolicy.kb.io
+  rules:
+  - apiGroups:
+    - cilium.io
+    apiVersions:
+    - v2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - ciliumnetworkpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ template "tenet.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-tenet-cybozu-io-v1beta1-networkpolicyadmissionrule
+  failurePolicy: Fail
+  name: vnetworkpolicyadmissionrule.kb.io
+  rules:
+  - apiGroups:
+    - tenet.cybozu.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networkpolicyadmissionrules
+  sideEffects: None

@@ -9,8 +9,6 @@ CILIUM_VERSION = $(shell awk '/github\.com\/cilium\/cilium/ {print $$2}' go.mod)
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
-# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.22
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -77,18 +75,21 @@ crds:
 	curl -fsL -o config/crd/third/ciliumnetworkpolicies.yaml https://github.com/cilium/cilium/raw/$(CILIUM_VERSION)/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumnetworkpolicies.yaml
 
 .PHONY: test
-test: manifests generate fmt vet crds envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+test: manifests generate fmt vet crds setup-envtest ## Run tests.
+	source <($(SETUP_ENVTEST) use -p env); \
+		go test -v -count 1 -race ./controllers -ginkgo.progress -ginkgo.v -ginkgo.failFast
+	source <($(SETUP_ENVTEST) use -p env); \
+		go test -v -count 1 -race ./hooks -ginkgo.progress -ginkgo.v
 
 ##@ Build
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
-	go build -o $(BIN_DIR)/manager main.go
+	go build -o $(BIN_DIR)/manager cmd/tenet-controller/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./main.go
+	go run ./cmd/tenet-controller/main.go
 
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.
@@ -144,10 +145,12 @@ $(HELM):
 	curl -L -sS https://get.helm.sh/helm-v$(HELM_VERSION)-linux-amd64.tar.gz \
 	  | tar xz -C $(BIN_DIR) --strip-components 1 linux-amd64/helm
 
-ENVTEST = $(BIN_DIR)/setup-envtest
-.PHONY: envtest
-envtest: ## Download envtest-setup locally if necessary.
-	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+SETUP_ENVTEST = $(BIN_DIR)/setup-envtest
+.PHONY: setup-envtest
+setup-envtest: $(SETUP_ENVTEST) ## Download envtest-setup locally if necessary.
+$(SETUP_ENVTEST):
+	# see https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest
+	GOBIN=$(BIN_DIR) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

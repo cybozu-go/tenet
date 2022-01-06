@@ -10,15 +10,12 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        go: [ '1.16', '1.17' ]
     steps:
       - uses: actions/checkout@v2
       - name: Setup go
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go }}
+          go-version: 1.17
       - name: Test
         run: make build
   lint:
@@ -49,18 +46,14 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        go: [ '1.16', '1.17' ]
-        kubernetes: [ '1.21', '1.22' ]
     steps:
       - uses: actions/checkout@v2
       - name: Setup go
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go }}
+          go-version: 1.17
       - name: Test
-        run: make test ENVTEST_K8S_VERSION=${{ matrix.kubernetes }}
+        run: make test
   dry-run:
     name: Dry-run release
     runs-on: ubuntu-20.04

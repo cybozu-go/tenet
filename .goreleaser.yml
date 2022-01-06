@@ -3,6 +3,7 @@ dist: bin/
 builds:
   - env:
       - CGO_ENABLED=0
+    main: ./cmd/tenet-controller
     goos:
       - linux
     goarch:

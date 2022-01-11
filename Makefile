@@ -1,11 +1,6 @@
-CTRL_TOOLS_VERSION=0.7.0
-HELM_VERSION = 3.7.1
-KUSTOMIZE_VERSION = 4.4.1
-CST_VERSION = 1.10.0
-MDBOOK_VERSION = 0.4.10
+include Makefile.versions
 BIN_DIR := $(shell pwd)/bin
 MDBOOK := $(BIN_DIR)/mdbook
-CILIUM_VERSION = v1.10.6
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest

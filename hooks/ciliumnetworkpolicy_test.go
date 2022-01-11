@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -165,5 +166,71 @@ var _ = Describe("CiliumNetworkPolicy webhook", func() {
 
 		err = createCiliumNetworkPolicy(ctx, nsName, multiplePolicySpecs)
 		Expect(err).To(HaveOccurred())
+	})
+
+	It("should block user deletion of managed CiliumNetworkPolicies", func() {
+		nsName := uuid.NewString()
+		ns := &corev1.Namespace{}
+		ns.Name = nsName
+		err := k8sClient.Create(ctx, ns)
+		Expect(err).NotTo(HaveOccurred())
+
+		y := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(allowedCIDR), len(allowedCIDR))
+		cnp := cilium.CiliumNetworkPolicy()
+		err = y.Decode(cnp)
+		Expect(err).NotTo(HaveOccurred())
+		cnp.SetNamespace(nsName)
+		cnp.SetOwnerReferences([]v1.OwnerReference{
+			{
+				APIVersion: tenetv1beta1.GroupVersion.String(),
+				Kind:       "NetworkPolicyTemplate",
+				Name:       "dummy",
+				UID:        types.UID(uuid.NewString()),
+			},
+		})
+		err = k8sClient.Create(ctx, cnp)
+		Expect(err).NotTo(HaveOccurred())
+
+		Eventually(func() error {
+			key := client.ObjectKey{
+				Namespace: nsName,
+				Name:      cnp.GetName(),
+			}
+			cnp = cilium.CiliumNetworkPolicy()
+			return k8sClient.Get(ctx, key, cnp)
+		}).Should(Succeed())
+
+		err = k8sClient.Delete(ctx, cnp)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("should allow user deletion of unmanaged CiliumNetworkPolicies", func() {
+		nsName := uuid.NewString()
+		ns := &corev1.Namespace{}
+		ns.Name = nsName
+		err := k8sClient.Create(ctx, ns)
+		Expect(err).NotTo(HaveOccurred())
+
+		y := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(allowedCIDR), len(allowedCIDR))
+		cnp := cilium.CiliumNetworkPolicy()
+		err = y.Decode(cnp)
+		Expect(err).NotTo(HaveOccurred())
+		cnp.SetNamespace(nsName)
+		cnp.SetOwnerReferences([]v1.OwnerReference{})
+		err = k8sClient.Create(ctx, cnp)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(func() error {
+			key := client.ObjectKey{
+				Namespace: nsName,
+				Name:      cnp.GetName(),
+			}
+			cnp = cilium.CiliumNetworkPolicy()
+			return k8sClient.Get(ctx, key, cnp)
+		}).Should(Succeed())
+
+		err = k8sClient.Delete(ctx, cnp)
+		Expect(err).NotTo(HaveOccurred())
 	})
 })

@@ -117,10 +117,26 @@ metadata:
     app.kubernetes.io/name: '{{ include "tenet.name" . }}'
     app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
     helm.sh/chart: '{{ include "tenet.chart" . }}'
-  name: '{{ template "tenet.fullname" . }}-metrics-reader'
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+  name: '{{ template "tenet.fullname" . }}-networkpolicyadmissionrule-editor-role'
 rules:
-- nonResourceURLs:
-  - /metrics
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicyadmissionrules
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicyadmissionrules/status
   verbs:
   - get
 ---
@@ -132,20 +148,80 @@ metadata:
     app.kubernetes.io/name: '{{ include "tenet.name" . }}'
     app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
     helm.sh/chart: '{{ include "tenet.chart" . }}'
-  name: '{{ template "tenet.fullname" . }}-proxy-role'
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+  name: '{{ template "tenet.fullname" . }}-networkpolicyadmissionrule-viewer-role'
 rules:
 - apiGroups:
-  - authentication.k8s.io
+  - tenet.cybozu.io
   resources:
-  - tokenreviews
+  - networkpolicyadmissionrules
   verbs:
-  - create
+  - get
+  - list
+  - watch
 - apiGroups:
-  - authorization.k8s.io
+  - tenet.cybozu.io
   resources:
-  - subjectaccessreviews
+  - networkpolicyadmissionrules/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+  name: '{{ template "tenet.fullname" . }}-networkpolicytemplate-editor-role'
+rules:
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates
   verbs:
   - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "tenet.chart" . }}'
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+  name: '{{ template "tenet.fullname" . }}-networkpolicytemplate-viewer-role'
+rules:
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates/status
+  verbs:
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -174,11 +250,11 @@ metadata:
     app.kubernetes.io/name: '{{ include "tenet.name" . }}'
     app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
     helm.sh/chart: '{{ include "tenet.chart" . }}'
-  name: '{{ template "tenet.fullname" . }}-manager-rolebinding'
+  name: '{{ template "tenet.fullname" . }}-manager-admin'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: '{{ template "tenet.fullname" . }}-manager-role'
+  name: admin
 subjects:
 - kind: ServiceAccount
   name: '{{ template "tenet.fullname" . }}-controller-manager'
@@ -192,36 +268,15 @@ metadata:
     app.kubernetes.io/name: '{{ include "tenet.name" . }}'
     app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
     helm.sh/chart: '{{ include "tenet.chart" . }}'
-  name: '{{ template "tenet.fullname" . }}-proxy-rolebinding'
+  name: '{{ template "tenet.fullname" . }}-manager-rolebinding'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: '{{ template "tenet.fullname" . }}-proxy-role'
+  name: '{{ template "tenet.fullname" . }}-manager-role'
 subjects:
 - kind: ServiceAccount
   name: '{{ template "tenet.fullname" . }}-controller-manager'
   namespace: '{{ .Release.Namespace }}'
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
-    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
-    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
-    control-plane: controller-manager
-    helm.sh/chart: '{{ include "tenet.chart" . }}'
-  name: '{{ template "tenet.fullname" . }}-controller-manager-metrics-service'
-  namespace: '{{ .Release.Namespace }}'
-spec:
-  ports:
-  - name: https
-    port: 8443
-    protocol: TCP
-    targetPort: https
-  selector:
-    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
-    control-plane: controller-manager
 ---
 apiVersion: v1
 kind: Service
@@ -237,10 +292,10 @@ spec:
   ports:
   - port: 443
     protocol: TCP
-    targetPort: 9443
+    targetPort: webhook-server
   selector:
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: '{{ include "tenet.name" . }}'
-    control-plane: controller-manager
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -272,6 +327,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - ciliumnetworkpolicies
   sideEffects: None

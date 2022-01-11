@@ -41,12 +41,11 @@ import (
 
 	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
 	"github.com/cybozu-go/tenet/pkg/cilium"
+	"github.com/cybozu-go/tenet/pkg/tenet"
 )
 
 const (
-	// PolicyAnnotation is the annotation used to opt-into a template.
-	PolicyAnnotation = "tenet.cybozu.io/network-policy-template"
-	finalizerName    = "tenet.cybozu.io/finalizer"
+	finalizerName = "tenet.cybozu.io/finalizer"
 )
 
 // NetworkPolicyTemplateReconciler reconciles a NetworkPolicyTemplate object.
@@ -181,7 +180,7 @@ func (r *NetworkPolicyTemplateReconciler) reconcileNetworkPolicy(ctx context.Con
 }
 
 func (r *NetworkPolicyTemplateReconciler) isOptedIntoTemplate(npt *tenetv1beta1.NetworkPolicyTemplate, ns corev1.Namespace) bool {
-	for _, a := range strings.Split(ns.Annotations[PolicyAnnotation], ",") {
+	for _, a := range strings.Split(ns.Annotations[tenet.PolicyAnnotation], ",") {
 		if a == npt.Name {
 			return true
 		}
@@ -243,8 +242,7 @@ func (r *NetworkPolicyTemplateReconciler) SetupWithManager(ctx context.Context, 
 		requests := make([]reconcile.Request, len(nptl.Items))
 		for i, npt := range nptl.Items {
 			requests[i] = reconcile.Request{NamespacedName: types.NamespacedName{
-				Name:      npt.Name,
-				Namespace: npt.Namespace,
+				Name: npt.Name,
 			}}
 		}
 		return requests

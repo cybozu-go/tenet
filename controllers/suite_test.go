@@ -80,7 +80,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	err = tenetv1beta1.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 

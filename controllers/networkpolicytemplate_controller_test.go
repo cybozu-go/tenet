@@ -9,6 +9,7 @@ import (
 	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
 	"github.com/cybozu-go/tenet/pkg/cilium"
 	cacheclient "github.com/cybozu-go/tenet/pkg/client"
+	"github.com/cybozu-go/tenet/pkg/tenet"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -86,7 +87,7 @@ func shouldCreateNamespace(ctx context.Context, nsName string, npts []string) {
 	ns.Name = nsName
 
 	if len(npts) > 0 {
-		ns.SetAnnotations(map[string]string{PolicyAnnotation: strings.Join(npts, ",")})
+		ns.SetAnnotations(map[string]string{tenet.PolicyAnnotation: strings.Join(npts, ",")})
 	}
 
 	err := k8sClient.Create(ctx, ns)

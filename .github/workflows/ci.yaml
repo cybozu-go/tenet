@@ -54,6 +54,29 @@ jobs:
           go-version: 1.17
       - name: Test
         run: make test
+  e2e:
+    name: End-to-End Tests
+    strategy:
+      matrix:
+        k8s-version: ["1.20.7", "1.21.2", "1.22.4"]
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+    - run: make start KUBERNETES_VERSION=${{ matrix.k8s-version }}
+      working-directory: e2e
+    - run: make test
+      working-directory: e2e
+    - run: make logs
+      working-directory: e2e
+      if: always()
+    - uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: logs-${{ matrix.k8s-version }}.tar.gz
+        path: e2e/logs.tar.gz
   dry-run:
     name: Dry-run release
     runs-on: ubuntu-20.04

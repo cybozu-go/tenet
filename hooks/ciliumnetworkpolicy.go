@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 
+	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,7 +18,7 @@ import (
 	"github.com/cybozu-go/tenet/pkg/cilium"
 )
 
-//+kubebuilder:webhook:path=/validate-cilium-io-v2-ciliumnetworkpolicy,mutating=false,failurePolicy=fail,sideEffects=None,groups=cilium.io,resources=ciliumnetworkpolicies,verbs=create;update,versions=v2,name=vciliumnetworkpolicy.kb.io,admissionReviewVersions={v1}
+//+kubebuilder:webhook:path=/validate-cilium-io-v2-ciliumnetworkpolicy,mutating=false,failurePolicy=fail,sideEffects=None,groups=cilium.io,resources=ciliumnetworkpolicies,verbs=create;update;delete,versions=v2,name=vciliumnetworkpolicy.kb.io,admissionReviewVersions={v1}
 
 type ciliumNetworkPolicyValidator struct {
 	client.Client
@@ -28,6 +29,38 @@ var _ admission.Handler = &ciliumNetworkPolicyValidator{}
 
 // Handler validates CiliumNetworkPolicies.
 func (v *ciliumNetworkPolicyValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+	switch req.Operation {
+	case admissionv1.Delete:
+		return v.handleDelete(ctx, req)
+	case admissionv1.Create:
+		return v.handleCreateOrUpdate(ctx, req)
+	case admissionv1.Update:
+		return v.handleCreateOrUpdate(ctx, req)
+	default:
+		return admission.Allowed("")
+	}
+}
+
+func (v *ciliumNetworkPolicyValidator) handleDelete(_ context.Context, req admission.Request) admission.Response {
+	cnp := cilium.CiliumNetworkPolicy()
+	if err := v.dec.DecodeRaw(req.OldObject, cnp); err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+	owners := cnp.GetOwnerReferences()
+	for _, owner := range owners {
+		if owner.APIVersion == tenetv1beta1.GroupVersion.String() && owner.Kind == "NetworkPolicyTemplate" {
+			for _, g := range req.UserInfo.Groups {
+				if g == "system:serviceaccounts" {
+					return admission.Allowed("")
+				}
+			}
+			return admission.Denied("user deletion is not allowed")
+		}
+	}
+	return admission.Allowed("")
+}
+
+func (v *ciliumNetworkPolicyValidator) handleCreateOrUpdate(ctx context.Context, req admission.Request) admission.Response {
 	cnp := cilium.CiliumNetworkPolicy()
 	if err := v.dec.Decode(req, cnp); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)

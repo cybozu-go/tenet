@@ -1,0 +1,14 @@
+apiVersion: tenet.cybozu.io/v1beta1
+kind: NetworkPolicyTemplate
+metadata:
+    name: allow-intra-namespace-egress
+spec:
+    policyTemplate: |
+      apiVersion: cilium.io/v2
+      kind: CiliumNetworkPolicy
+      spec:
+        endpointSelector: {}
+        egress:
+        - toEndpoints:
+          - matchLabels:
+              "k8s:io.kubernetes.pod.namespace": {{.Name}}

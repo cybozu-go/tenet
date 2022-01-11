@@ -1,0 +1,18 @@
+image:
+  repository: tenet
+
+  tag: dev
+
+  pullPolicy: Never
+
+controller:
+  replicas: 2
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+
+  terminationGracePeriodSeconds: 10
+
+  extraArgs: []

@@ -15,6 +15,9 @@ var (
 
 	//go:embed t/bmc-deny-npt.yaml
 	bmcDenyNetworkPolicyTemplate []byte
+
+	//go:embed t/bmc-deny-npar.yaml
+	bmcDenyNetworkPolicyAdmissionRule []byte
 )
 
 func TestE2E(t *testing.T) {
@@ -33,4 +36,7 @@ var _ = BeforeSuite(func() {
 	By("setting up default NetworkPolicyTemplates")
 	kubectlSafe(intraNSNetworkPolicyTemplate, "apply", "-f", "-")
 	kubectlSafe(bmcDenyNetworkPolicyTemplate, "apply", "-f", "-")
+
+	By("setting up default NetworkPolicyAdmissionRules")
+	kubectlSafe(bmcDenyNetworkPolicyAdmissionRule, "apply", "-f", "-")
 }, 60)

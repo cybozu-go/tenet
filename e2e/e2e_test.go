@@ -27,6 +27,12 @@ var (
 
 	//go:embed t/user-edit-cnp.yaml
 	userEditedCiliumNetworkPolicy []byte
+
+	//go:embed t/bmc-allow-cnp.yaml
+	bmcAllowCiliumNetworkPolicy []byte
+
+	//go:embed t/legal-cnp.yaml
+	legalCiliumNetworkPolicy []byte
 )
 
 func getCNPInNamespace(name, namespace string) error {
@@ -212,5 +218,51 @@ var _ = Describe("NetworkPolicyTemplate", func() {
 		Consistently(func() error {
 			return getCNPInNamespace(dummyPolicyName, nsName)
 		}).ShouldNot(Succeed())
+	})
+})
+
+var _ = Describe("NetworkPolicyAdmissionRule", func() {
+	It("should reject a CiliumNetworkPolicy with forbidden IP", func() {
+		By("setting up namespace")
+		nsName := uuid.NewString()
+		kubectlSafe(nil, "create", "ns", nsName)
+		kubectlSafe(nil, "label", "ns", nsName, "team=tenant")
+
+		By("applying bmc-allow CiliumNetworkPolicy")
+		_, err := kubectl(bmcAllowCiliumNetworkPolicy, "apply", "-n", nsName, "-f", "-")
+		Expect(err).To(HaveOccurred())
+
+		Consistently(func() error {
+			return getCNPInNamespace(dummyPolicyName, nsName)
+		}).ShouldNot(Succeed())
+	})
+
+	It("should not apply admission rules to excluded namespaces", func() {
+		By("setting up namespace")
+		nsName := uuid.NewString()
+		kubectlSafe(nil, "create", "ns", nsName)
+		kubectlSafe(nil, "label", "ns", nsName, "team=neco")
+
+		By("applying bmc-allow CiliumNetworkPolicy")
+		_, err := kubectl(bmcAllowCiliumNetworkPolicy, "apply", "-n", nsName, "-f", "-")
+		Expect(err).NotTo(HaveOccurred())
+
+		Eventually(func() error {
+			return getCNPInNamespace(dummyPolicyName, nsName)
+		}).Should(Succeed())
+	})
+
+	It("should not reject a legal CiliumNetworkPolicy", func() {
+		By("setting up namespace")
+		nsName := uuid.NewString()
+		kubectlSafe(nil, "create", "ns", nsName)
+
+		By("applying CiliumNetworkPolicy without forbidden IPs")
+		_, err := kubectl(legalCiliumNetworkPolicy, "apply", "-n", nsName, "-f", "-")
+		Expect(err).NotTo(HaveOccurred())
+
+		Eventually(func() error {
+			return getCNPInNamespace(dummyPolicyName, nsName)
+		}).Should(Succeed())
 	})
 })

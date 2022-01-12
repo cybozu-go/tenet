@@ -1,0 +1,15 @@
+apiVersion: tenet.cybozu.io/v1beta1
+kind: NetworkPolicyAdmissionRule
+metadata:
+    name: bmc-deny
+spec:
+    namespaceSelector:
+      excludeLabels:
+        team: neco
+    forbiddenIPRanges:
+      - cidr: 10.72.16.0/20
+        type: egress
+      - cidr: 10.76.16.0/20
+        type: egress
+      - cidr: 10.78.16.0/20
+        type: egress

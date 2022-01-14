@@ -190,6 +190,7 @@ func (r *NetworkPolicyTemplateReconciler) isOptedIntoTemplate(npt *tenetv1beta1.
 
 func (r *NetworkPolicyTemplateReconciler) compileTemplate(npt *tenetv1beta1.NetworkPolicyTemplate, ns corev1.Namespace) (*unstructured.Unstructured, error) {
 	cnp := cilium.CiliumNetworkPolicy()
+	refCNP := cilium.CiliumNetworkPolicy()
 	tpl, err := template.New(npt.Name).Parse(npt.Spec.PolicyTemplate)
 	if err != nil {
 		return nil, err
@@ -202,7 +203,7 @@ func (r *NetworkPolicyTemplateReconciler) compileTemplate(npt *tenetv1beta1.Netw
 	if err := y.Decode(cnp); err != nil {
 		return nil, err
 	}
-	if cnp.GetAPIVersion() != "cilium.io/v2" || cnp.GetKind() != "CiliumNetworkPolicy" {
+	if cnp.GetAPIVersion() != refCNP.GetAPIVersion() || cnp.GetKind() != refCNP.GetKind() {
 		return nil, fmt.Errorf("invalid schema: %v", cnp.GetObjectKind().GroupVersionKind())
 	}
 

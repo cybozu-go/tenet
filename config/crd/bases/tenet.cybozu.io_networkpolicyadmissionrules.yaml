@@ -55,6 +55,9 @@ spec:
                       - ingress
                       - all
                       type: string
+                  required:
+                  - cidr
+                  - type
                   type: object
                 type: array
               namespaceSelector:
@@ -73,6 +76,8 @@ spec:
             description: NetworkPolicyAdmissionRuleStatus defines the observed state
               of NetworkPolicyAdmissionRule.
             type: string
+        required:
+        - spec
         type: object
     served: true
     storage: true

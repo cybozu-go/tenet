@@ -40,6 +40,8 @@ spec:
               policyTemplate:
                 description: PolicyTemplate is a template for creating NetworkPolicies
                 type: string
+            required:
+            - policyTemplate
             type: object
           status:
             description: Status represents the status of the NetworkPolicyTemplate
@@ -47,6 +49,8 @@ spec:
             - ok
             - invalid
             type: string
+        required:
+        - spec
         type: object
     served: true
     storage: true

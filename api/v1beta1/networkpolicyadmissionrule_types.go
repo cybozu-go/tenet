@@ -51,12 +51,12 @@ type NetworkPolicyAdmissionRuleNamespaceSelector struct {
 // NetworkPolicyAdmissionRuleForbiddenIPRanges defines forbidden IP ranges.
 type NetworkPolicyAdmissionRuleForbiddenIPRanges struct {
 	// CIDR range.
-	CIDR string `json:"cidr,omitempty"`
+	CIDR string `json:"cidr"`
 
 	// Type of connection the rule applies to.
 	// +kubebuilder:validation:Enum=egress;ingress;all
 	// +default:"all"
-	Type NetworkPolicyAdmissionRuleType `json:"type,omitempty"`
+	Type NetworkPolicyAdmissionRuleType `json:"type"`
 }
 
 //+kubebuilder:object:root=true
@@ -68,7 +68,7 @@ type NetworkPolicyAdmissionRule struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   NetworkPolicyAdmissionRuleSpec   `json:"spec,omitempty"`
+	Spec   NetworkPolicyAdmissionRuleSpec   `json:"spec"`
 	Status NetworkPolicyAdmissionRuleStatus `json:"status,omitempty"`
 }
 

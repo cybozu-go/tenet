@@ -92,8 +92,7 @@ func (v *ciliumNetworkPolicyValidator) handleCreateOrUpdate(ctx context.Context,
 }
 
 func (v *ciliumNetworkPolicyValidator) gatherPolicies(cnp *unstructured.Unstructured) ([]*net.IPNet, []*net.IPNet, error) {
-	egressPolicies := []*net.IPNet{}
-	ingressPolicies := []*net.IPNet{}
+	var egressPolicies, ingressPolicies []*net.IPNet
 	cnpSpec, found, _ := unstructured.NestedMap(cnp.UnstructuredContent(), "spec")
 	if found {
 		e, i, err := v.gatherPoliciesFromRule(cnpSpec)
@@ -197,7 +196,7 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRSetRule(rule interf
 	if !ok {
 		return nil, fmt.Errorf("unexpected CIDRSet policies format")
 	}
-	policies := []*net.IPNet{}
+	var policies []*net.IPNet
 	for _, cidrSetRule := range cidrSetRules {
 		cidrSetRule, ok := cidrSetRule.(map[string]interface{})
 		if !ok {
@@ -220,8 +219,7 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRSetRule(rule interf
 }
 
 func (v *ciliumNetworkPolicyValidator) gatherFilters(nparl *tenetv1beta1.NetworkPolicyAdmissionRuleList) ([]*net.IPNet, []*net.IPNet, error) {
-	egressFilters := []*net.IPNet{}
-	ingressFilters := []*net.IPNet{}
+	var egressFilters, ingressFilters []*net.IPNet
 	for _, npar := range nparl.Items {
 		for _, ipRange := range npar.Spec.ForbiddenIPRanges {
 			_, cidr, err := net.ParseCIDR(ipRange.CIDR)

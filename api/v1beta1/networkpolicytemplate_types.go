@@ -32,7 +32,7 @@ const (
 // NetworkPolicyTemplateSpec defines the desired state of NetworkPolicyTemplate.
 type NetworkPolicyTemplateSpec struct {
 	// PolicyTemplate is a template for creating NetworkPolicies
-	PolicyTemplate string `json:"policyTemplate,omitempty"`
+	PolicyTemplate string `json:"policyTemplate"`
 }
 
 //+kubebuilder:object:root=true
@@ -45,7 +45,7 @@ type NetworkPolicyTemplate struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec is the spec for the NetworkPolicyTemplate
-	Spec NetworkPolicyTemplateSpec `json:"spec,omitempty"`
+	Spec NetworkPolicyTemplateSpec `json:"spec"`
 
 	// Status represents the status of the NetworkPolicyTemplate
 	// +optional

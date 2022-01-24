@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -93,6 +94,15 @@ func (r *NetworkPolicyTemplateReconciler) Reconcile(ctx context.Context, req ctr
 	return r.reconcileTemplate(ctx, npt)
 }
 
+func (r *NetworkPolicyTemplateReconciler) shouldDelete(npt *tenetv1beta1.NetworkPolicyTemplate, ownerRefs []v1.OwnerReference) bool {
+	for _, ownerRef := range ownerRefs {
+		if ownerRef.APIVersion == tenetv1beta1.GroupVersion.String() && ownerRef.Kind == tenetv1beta1.NetworkPolicyTemplateKind && ownerRef.Name == npt.Name {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *NetworkPolicyTemplateReconciler) finalize(ctx context.Context, npt *tenetv1beta1.NetworkPolicyTemplate) error {
 	if !controllerutil.ContainsFinalizer(npt, finalizerName) {
 		return nil
@@ -106,6 +116,9 @@ func (r *NetworkPolicyTemplateReconciler) finalize(ctx context.Context, npt *ten
 	}
 	for _, cnp := range cnpl.Items {
 		if cnp.GetDeletionTimestamp() != nil {
+			continue
+		}
+		if !r.shouldDelete(npt, cnp.GetOwnerReferences()) {
 			continue
 		}
 		if err := r.Delete(ctx, &cnp); err != nil {
@@ -226,7 +239,7 @@ func (r *NetworkPolicyTemplateReconciler) SetupWithManager(ctx context.Context, 
 		}
 		owners := cnp.GetOwnerReferences()
 		for _, owner := range owners {
-			if owner.APIVersion == tenetv1beta1.GroupVersion.String() && owner.Kind == "NetworkPolicyTemplate" {
+			if owner.APIVersion == tenetv1beta1.GroupVersion.String() && owner.Kind == tenetv1beta1.NetworkPolicyTemplateKind {
 				return []string{owner.Name}
 			}
 		}

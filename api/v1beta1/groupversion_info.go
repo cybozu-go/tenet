@@ -33,4 +33,7 @@ var (
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
+
+	// NetworkPolicyTemplateKind is the singular kind name for NetworkPolicyTemplates.
+	NetworkPolicyTemplateKind = "NetworkPolicyTemplate"
 )

@@ -48,7 +48,7 @@ func (v *ciliumNetworkPolicyValidator) handleDelete(_ context.Context, req admis
 	}
 	owners := cnp.GetOwnerReferences()
 	for _, owner := range owners {
-		if owner.APIVersion == tenetv1beta1.GroupVersion.String() && owner.Kind == "NetworkPolicyTemplate" {
+		if owner.APIVersion == tenetv1beta1.GroupVersion.String() && owner.Kind == tenetv1beta1.NetworkPolicyTemplateKind {
 			for _, g := range req.UserInfo.Groups {
 				if g == "system:serviceaccounts" {
 					return admission.Allowed("")

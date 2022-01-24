@@ -203,8 +203,7 @@ var _ = Describe("NetworkPolicyTemplate", func() {
 
 		By("checking propagation")
 		Eventually(func() error {
-			_, err := kubectl(nil, "get", "-n", nsName, "CiliumNetworkPolicy", dummyPolicyName)
-			return err
+			return getCNPInNamespace(dummyPolicyName, nsName)
 		}).Should(Succeed())
 
 		By("deleting NetworkPolicyTemplate")
@@ -218,6 +217,39 @@ var _ = Describe("NetworkPolicyTemplate", func() {
 		Consistently(func() error {
 			return getCNPInNamespace(dummyPolicyName, nsName)
 		}).ShouldNot(Succeed())
+	})
+
+	It("should not delete other resoruces when cascade deleting", func() {
+		By("setting up namespace")
+		nsName := uuid.NewString()
+		kubectlSafe(nil, "create", "ns", nsName)
+		kubectlSafe(nil, "annotate", "ns", nsName, fmt.Sprintf("%s=%s,%s", tenet.PolicyAnnotation, dummyPolicyName, allowIntraNSEgressPolicyName))
+
+		By("setting up NetworkPolicyTemplate")
+		kubectlSafe(dummyNetworkPolicyTemplate, "apply", "-f", "-")
+
+		By("checking propagation")
+		Eventually(func() error {
+			return getCNPInNamespace(dummyPolicyName, nsName)
+		}).Should(Succeed())
+		Eventually(func() error {
+			return getCNPInNamespace(allowIntraNSEgressPolicyName, nsName)
+		}).Should(Succeed())
+
+		By("deleting NetworkPolicyTemplate")
+		_, err := kubectl(nil, "delete", "NetworkPolicyTemplate", dummyPolicyName)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("checking propagation")
+		Eventually(func() error {
+			return getCNPInNamespace(dummyPolicyName, nsName)
+		}).ShouldNot(Succeed())
+		Consistently(func() error {
+			return getCNPInNamespace(dummyPolicyName, nsName)
+		}).ShouldNot(Succeed())
+		Consistently(func() error {
+			return getCNPInNamespace(allowIntraNSEgressPolicyName, nsName)
+		}).Should(Succeed())
 	})
 })
 

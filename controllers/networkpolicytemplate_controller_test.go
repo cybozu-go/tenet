@@ -356,6 +356,57 @@ var _ = Describe("Tenet controller", func() {
 		}).ShouldNot(Succeed())
 	})
 
+	It("should not delete other resources when cascade deleting", func() {
+		intraNSNptName := uuid.NewString()
+		bmcNptName := uuid.NewString()
+		nsName := uuid.NewString()
+		shouldCreateNetworkPolicyTemplate(ctx, intraNSNptName, intraNSTemplate)
+		shouldCreateNetworkPolicyTemplate(ctx, bmcNptName, bmcDenyTemplate)
+		shouldCreateNamespace(ctx, nsName, []string{intraNSNptName, bmcNptName})
+
+		npt := &tenetv1beta1.NetworkPolicyTemplate{}
+		nptKey := client.ObjectKey{
+			Name: intraNSNptName,
+		}
+		err := k8sClient.Get(ctx, nptKey, npt)
+		Expect(err).NotTo(HaveOccurred())
+
+		intraNSCNP := cilium.CiliumNetworkPolicy()
+		intraNSKey := client.ObjectKey{
+			Namespace: nsName,
+			Name:      intraNSNptName,
+		}
+		bmcDenyCNP := cilium.CiliumNetworkPolicy()
+		bmcDenyKey := client.ObjectKey{
+			Namespace: nsName,
+			Name:      bmcNptName,
+		}
+		Eventually(func() error {
+			return k8sClient.Get(ctx, intraNSKey, intraNSCNP)
+		}).Should(Succeed())
+		Consistently(func() error {
+			return k8sClient.Get(ctx, intraNSKey, intraNSCNP)
+		}).Should(Succeed())
+
+		Eventually(func() error {
+			return k8sClient.Get(ctx, bmcDenyKey, bmcDenyCNP)
+		}).Should(Succeed())
+
+		err = k8sClient.Delete(ctx, npt)
+		Expect(err).NotTo(HaveOccurred())
+
+		Eventually(func() error {
+			return k8sClient.Get(ctx, intraNSKey, intraNSCNP)
+		}).ShouldNot(Succeed())
+		Consistently(func() error {
+			return k8sClient.Get(ctx, intraNSKey, intraNSCNP)
+		}).ShouldNot(Succeed())
+
+		Consistently(func() error {
+			return k8sClient.Get(ctx, bmcDenyKey, bmcDenyCNP)
+		}).Should(Succeed())
+	})
+
 	It("should update status of invalid templates", func() {
 		nptName := uuid.NewString()
 		nsName := uuid.NewString()

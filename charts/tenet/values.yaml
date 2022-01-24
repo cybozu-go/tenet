@@ -23,4 +23,5 @@ controller:
   terminationGracePeriodSeconds: 10
 
   # controller.extraArgs -- Optional additional arguments.
-  extraArgs: []
+  extraArgs:
+    - --leader-elect

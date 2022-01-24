@@ -24,9 +24,11 @@ spec:
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}
           {{- end }}
-          {{- with .Values.controller.extraArgs }}
-          args: {{ . }}
-          {{- end }}
+          args:
+            - --service-account-name=system:serviceaccount:{{ .Release.Namespace }}:{{ template "tenet.fullname" . }}-controller-manager
+            {{- range .Values.controller.extraArgs }}
+            - {{ . }}
+            {{- end }}
           ports:
             - containerPort: 9443
               name: webhook-server

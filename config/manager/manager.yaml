@@ -31,6 +31,7 @@ spec:
         - /manager
         args:
         - --leader-elect
+        - --service-account-name=system:serviceaccount:system:controller-manager
         image: ghcr.io/cybozu-go/tenet:latest
         name: manager
         securityContext:

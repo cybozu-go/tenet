@@ -22,7 +22,8 @@ import (
 
 type ciliumNetworkPolicyValidator struct {
 	client.Client
-	dec *admission.Decoder
+	dec                *admission.Decoder
+	serviceAccountName string
 }
 
 var _ admission.Handler = &ciliumNetworkPolicyValidator{}
@@ -49,10 +50,8 @@ func (v *ciliumNetworkPolicyValidator) handleDelete(_ context.Context, req admis
 	owners := cnp.GetOwnerReferences()
 	for _, owner := range owners {
 		if owner.APIVersion == tenetv1beta1.GroupVersion.String() && owner.Kind == tenetv1beta1.NetworkPolicyTemplateKind {
-			for _, g := range req.UserInfo.Groups {
-				if g == "system:serviceaccounts" {
-					return admission.Allowed("")
-				}
+			if req.UserInfo.Username == v.serviceAccountName {
+				return admission.Allowed("deletion by service account")
 			}
 			return admission.Denied("user deletion is not allowed")
 		}
@@ -273,10 +272,11 @@ func (v *ciliumNetworkPolicyValidator) shouldValidate(ns *corev1.Namespace, npar
 	return true
 }
 
-func SetupCiliumNetworkPolicyWebhook(mgr manager.Manager, dec *admission.Decoder) {
+func SetupCiliumNetworkPolicyWebhook(mgr manager.Manager, dec *admission.Decoder, sa string) {
 	v := &ciliumNetworkPolicyValidator{
-		Client: mgr.GetClient(),
-		dec:    dec,
+		Client:             mgr.GetClient(),
+		dec:                dec,
+		serviceAccountName: sa,
 	}
 	srv := mgr.GetWebhookServer()
 	srv.Register("/validate-cilium-io-v2-ciliumnetworkpolicy", &webhook.Admission{Handler: v})

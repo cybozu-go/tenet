@@ -91,7 +91,7 @@ var _ = BeforeSuite(func() {
 	dec, err := admission.NewDecoder(scheme)
 	Expect(err).NotTo(HaveOccurred())
 	SetupNetworkPolicyAdmissionRuleWebhook(mgr, dec)
-	SetupCiliumNetworkPolicyWebhook(mgr, dec)
+	SetupCiliumNetworkPolicyWebhook(mgr, dec, "system:serviceaccount:tenet-system:tenet-controller-manager")
 
 	go func() {
 		err = mgr.Start(ctx)

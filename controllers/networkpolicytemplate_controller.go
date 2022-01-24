@@ -20,12 +20,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"reflect"
 	"strings"
 	"text/template"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -171,7 +171,7 @@ func (r *NetworkPolicyTemplateReconciler) reconcileNetworkPolicy(ctx context.Con
 		logger.Info("creating CiliumNetworkPolicy", "name", currentNetworkPolicy.GetName())
 		return r.Create(ctx, currentNetworkPolicy)
 	}
-	if reflect.DeepEqual(existingNetworkPolicy, currentNetworkPolicy) {
+	if equality.Semantic.DeepEqual(existingNetworkPolicy.UnstructuredContent()["spec"], currentNetworkPolicy.UnstructuredContent()["spec"]) {
 		return nil
 	}
 	existingNetworkPolicy.UnstructuredContent()["spec"] = currentNetworkPolicy.DeepCopy().UnstructuredContent()["spec"]

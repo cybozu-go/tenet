@@ -301,8 +301,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ template "tenet.fullname"
-      . }}-serving-cert'
+    cert-manager.io/inject-ca-from: '{{ template "tenet.namespacedname" . }}-serving-cert'
   labels:
     app.kubernetes.io/managed-by: '{{ .Release.Service }}'
     app.kubernetes.io/name: '{{ include "tenet.name" . }}'

@@ -1,3 +1,13 @@
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin
+testbin/*
+
 # Test binary, build with `go test -c`
 *.test
 
@@ -8,13 +18,21 @@
 .glide/
 
 # Editors
-*~
-.*.swp
 .#*
 \#*#
 /.vscode
-/.idea
 
 # Generated files
 /bin
 /docs/book
+# Kubernetes Generated files - skip generated files, except for vendored files
+
+!vendor/**/zz_generated.*
+
+# editor and IDE paraphernalia
+.idea
+*.swp
+*.swo
+*~
+test
+/tenet

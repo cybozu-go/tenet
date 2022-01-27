@@ -1,0 +1,22 @@
+# permissions for end users to view networkpolicyadmissionrules.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: networkpolicyadmissionrule-viewer-role
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicyadmissionrules
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicyadmissionrules/status
+  verbs:
+  - get

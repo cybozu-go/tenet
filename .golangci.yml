@@ -1,0 +1,13 @@
+linters:
+  enable:
+    - dupl
+    - gocognit
+    - goconst
+    - gocyclo
+    - godot
+    - gofmt
+    - nilerr
+    - revive
+    - unparam
+run:
+  timeout: 5m

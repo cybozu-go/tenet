@@ -1,0 +1,27 @@
+# permissions for end users to edit networkpolicyadmissionrules.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: networkpolicyadmissionrule-editor-role
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicyadmissionrules
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicyadmissionrules/status
+  verbs:
+  - get

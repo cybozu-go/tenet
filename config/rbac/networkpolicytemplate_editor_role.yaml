@@ -1,0 +1,27 @@
+# permissions for end users to edit networkpolicytemplates.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: networkpolicytemplate-editor-role
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates/status
+  verbs:
+  - get

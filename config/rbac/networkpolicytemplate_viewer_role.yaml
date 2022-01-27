@@ -1,0 +1,22 @@
+# permissions for end users to view networkpolicytemplates.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: networkpolicytemplate-viewer-role
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates/status
+  verbs:
+  - get

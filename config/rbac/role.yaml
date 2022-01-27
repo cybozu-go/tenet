@@ -1,0 +1,53 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cilium.io
+  resources:
+  - ciliumnetworkpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
+  - networkpolicytemplates/status
+  verbs:
+  - get
+  - patch
+  - update

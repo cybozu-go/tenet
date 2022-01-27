@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "tenet.fullname" . }}-serving-cert
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tenet.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+    - {{ template "tenet.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc
+    - {{ template "tenet.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: {{ template "tenet.fullname" . }}-selfsigned-issuer
+  secretName: webhook-server-cert

@@ -1,0 +1,15 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: "forbidden-cidrset-in-either"
+spec:
+  endpointSelector: {}
+  ingress:
+  - fromCIDRSet:
+    - cidr: 10.76.16.0/20
+    - cidr: 10.78.16.0/20
+    - cidr: 10.96.16.0/20
+  egress:
+  - toCIDRSet:
+    - cidr: 10.76.16.0/20
+    - cidr: 10.96.16.0/20

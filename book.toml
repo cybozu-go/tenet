@@ -1,0 +1,10 @@
+[book]
+language = "en"
+multilingual = false
+src = "."
+title = "Tenet Documentation"
+
+[output.html]
+git-repository-url = "https://github.com/cybozu-go/tenet"
+edit-url-template = "https://github.com/cybozu-go/tenet/edit/main/docs/{path}"
+site-url = "/tenet/"

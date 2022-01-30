@@ -5,8 +5,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0] - 2022-01-27
+
 ### Added
+- Initial tenet implementation
+- 
 ### Changed
 ### Removed
 
-[Unreleased]: https://github.com/cybozu-go/neco-template/compare/4b825dc642cb6eb9a060e54bf8d69288fbee4904...HEAD
+[Unreleased]: https://github.com/cybozu-go/neco-template/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/cybozu-go/neco-template/compare/eb69a70ad3b330d52f1165ac4a95f6948a3cf658...v0.1.0

@@ -1,0 +1,15 @@
+apiVersion: v1
+entries:
+  tenet:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2022-01-31T01:11:43.611166407Z"
+    description: Tenet is a Kubernetes controller that aims to facilitate setting-up
+      Network Policies on tenant namespaces.
+    digest: 435678af6efe74fef0eb4e9825082718a3cdc329e42768162156d615acb717e3
+    name: tenet
+    type: application
+    urls:
+    - https://cybozu-go.github.io/tenet/tenet-0.1.0.tgz
+    version: 0.1.0
+generated: "2022-01-31T01:11:43.610532179Z"

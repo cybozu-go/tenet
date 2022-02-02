@@ -43,7 +43,7 @@ help: ## Display this help.
 .PHONY: manifests
 manifests: controller-gen kustomize ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/crds > charts/tenet/crds/tenet.cybozu.io_crds.yaml
+	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/crds > charts/tenet/templates/generated/crds/tenet.cybozu.io_crds.yaml
 	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/templates > charts/tenet/templates/generated/generated.yaml
 
 .PHONY: generate
@@ -165,7 +165,7 @@ $(MDBOOK):
 CONTAINER_STRUCTURE_TEST = $(BIN_DIR)/container-structure-test
 .PHONY: container-structure-test
 container-structure-test: $(CONTAINER_STRUCTURE_TEST)
-	$(CONTAINER_STRUCTURE_TEST) test --image ghcr.io/cybozu-go/tenet:$(shell git describe --tags --abbrev=0 || echo v0.0.0)-next-amd64 --config cst.yaml
+	$(CONTAINER_STRUCTURE_TEST) test --image ghcr.io/cybozu-go/tenet:$(shell git describe --tags --abbrev=0 --match "v*" || echo v0.0.0)-next-amd64 --config cst.yaml
 
 $(CONTAINER_STRUCTURE_TEST):
 	mkdir -p $(BIN_DIR)

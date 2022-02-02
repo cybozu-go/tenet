@@ -165,7 +165,7 @@ $(MDBOOK):
 CONTAINER_STRUCTURE_TEST = $(BIN_DIR)/container-structure-test
 .PHONY: container-structure-test
 container-structure-test: $(CONTAINER_STRUCTURE_TEST)
-	$(CONTAINER_STRUCTURE_TEST) test --image ghcr.io/cybozu-go/tenet:$(shell git describe --tags --abbrev=0 || echo v0.0.0)-next-amd64 --config cst.yaml
+	$(CONTAINER_STRUCTURE_TEST) test --image ghcr.io/cybozu-go/tenet:$(shell git describe --tags --abbrev=0 --match "v*" || echo v0.0.0)-next-amd64 --config cst.yaml
 
 $(CONTAINER_STRUCTURE_TEST):
 	mkdir -p $(BIN_DIR)

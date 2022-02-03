@@ -117,37 +117,6 @@ metadata:
     app.kubernetes.io/name: '{{ include "tenet.name" . }}'
     app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
     helm.sh/chart: '{{ include "tenet.chart" . }}'
-    rbac.authorization.k8s.io/aggregate-to-admin: "true"
-    rbac.authorization.k8s.io/aggregate-to-edit: "true"
-  name: '{{ template "tenet.fullname" . }}-networkpolicyadmissionrule-editor-role'
-rules:
-- apiGroups:
-  - tenet.cybozu.io
-  resources:
-  - networkpolicyadmissionrules
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - tenet.cybozu.io
-  resources:
-  - networkpolicyadmissionrules/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
-    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
-    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
-    helm.sh/chart: '{{ include "tenet.chart" . }}'
     rbac.authorization.k8s.io/aggregate-to-view: "true"
   name: '{{ template "tenet.fullname" . }}-networkpolicyadmissionrule-viewer-role'
 rules:
@@ -163,37 +132,6 @@ rules:
   - tenet.cybozu.io
   resources:
   - networkpolicyadmissionrules/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
-    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
-    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
-    helm.sh/chart: '{{ include "tenet.chart" . }}'
-    rbac.authorization.k8s.io/aggregate-to-admin: "true"
-    rbac.authorization.k8s.io/aggregate-to-edit: "true"
-  name: '{{ template "tenet.fullname" . }}-networkpolicytemplate-editor-role'
-rules:
-- apiGroups:
-  - tenet.cybozu.io
-  resources:
-  - networkpolicytemplates
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - tenet.cybozu.io
-  resources:
-  - networkpolicytemplates/status
   verbs:
   - get
 ---

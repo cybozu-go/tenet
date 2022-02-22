@@ -17,6 +17,7 @@ import (
 
 const (
 	allowIntraNSEgressPolicyName = "allow-intra-namespace-egress"
+	clusterwideNPTName           = "clusterwide-npt"
 	bmcDenyPolicyName            = "bmc-deny"
 	dummyPolicyName              = "dummy"
 )
@@ -96,6 +97,20 @@ var _ = Describe("NetworkPolicyTemplate", func() {
 		By("checking non-propagation")
 		Consistently(func() error {
 			return checkCNPCount(nsName, 0)
+		}).Should(Succeed())
+	})
+
+	It("should create CiliumClusterwideNetworkPolicy", func() {
+		By("setting up namespace")
+		nsName := uuid.NewString()
+		kubectlSafe(nil, "create", "ns", nsName)
+		kubectlSafe(nil, "label", "ns", nsName, "team=my-team")
+		kubectlSafe(nil, "annotate", "ns", nsName, fmt.Sprintf("%s=%s", tenet.PolicyAnnotation, clusterwideNPTName))
+
+		By("checking propagation")
+		Consistently(func() error {
+			_, err := kubectl(nil, "get", "CiliumClusterwideNetworkPolicy", fmt.Sprintf("%s-clusterwide-npt", nsName))
+			return err
 		}).Should(Succeed())
 	})
 

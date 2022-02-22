@@ -1,5 +1,5 @@
 # NetworkPolicyTemplate
-`NetworkPolicyTemplate` enables administrators to write `CiliumNetworkPolicy` templates that tenants can opt-into via the `tenet.cybozu.io/network-policy-template` annotation in their `Namespace` resources. Templates can be supplied with values sources from the `.metadata` field of the `Namespace` resource that reference them. When annotations are placed on a root namespace managed by Accurate the annotations, and thus the templated CiliumNetworkPolicies, can be propagated to child namespaces. For instance, given the following `NetworkPolicyTemplate`,
+`NetworkPolicyTemplate` enables administrators to write `CiliumNetworkPolicy` or `CiliumClusterwideNetworkPolicy` templates that tenants can opt-into via the `tenet.cybozu.io/network-policy-template` annotation in their `Namespace` resources. Templates can be supplied with values sources from the `.metadata` field of the `Namespace` resource that reference them. When annotations are placed on a root namespace managed by Accurate the annotations, and thus the templated CiliumNetworkPolicies, can be propagated to child namespaces. For instance, given the following `NetworkPolicyTemplate`,
 
 ```yaml
 # network-policy-template.yaml
@@ -52,3 +52,5 @@ spec:
 ```
 
 If `my-namespace` is an Accurate root namespace, any of its child namespace will inherit the `tenet.cybozu.io/network-policy-template` annotation and CiliumNetworkPolicies will be created with the templates filled-in.
+
+To write `CiliumClusterwideNetworkPolicy` templates, set `.spec.clusterwide: true` on `NetworkPolicyTemplate`.

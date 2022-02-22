@@ -10,10 +10,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
+	tenetv1beta2 "github.com/cybozu-go/tenet/api/v1beta2"
 )
 
-//+kubebuilder:webhook:path=/validate-tenet-cybozu-io-v1beta1-networkpolicyadmissionrule,mutating=false,failurePolicy=fail,sideEffects=None,groups=tenet.cybozu.io,resources=networkpolicyadmissionrules,verbs=create;update,versions=v1beta1,name=vnetworkpolicyadmissionrule.kb.io,admissionReviewVersions={v1}
+//+kubebuilder:webhook:path=/validate-tenet-cybozu-io-v1beta2-networkpolicyadmissionrule,mutating=false,failurePolicy=fail,sideEffects=None,groups=tenet.cybozu.io,resources=networkpolicyadmissionrules,verbs=create;update,versions=v1beta2,name=vnetworkpolicyadmissionrule.kb.io,admissionReviewVersions={v1}
 
 type networkPolicyAdmissionRuleValidator struct {
 	client.Client
@@ -24,7 +24,7 @@ var _ admission.Handler = &networkPolicyAdmissionRuleValidator{}
 
 // Handle validates the NetworkPolicyAdmissionRule.
 func (v *networkPolicyAdmissionRuleValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	npar := &tenetv1beta1.NetworkPolicyAdmissionRule{}
+	npar := &tenetv1beta2.NetworkPolicyAdmissionRule{}
 	if err := v.dec.Decode(req, npar); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
@@ -45,5 +45,5 @@ func SetupNetworkPolicyAdmissionRuleWebhook(mgr manager.Manager, dec *admission.
 		dec:    dec,
 	}
 	srv := mgr.GetWebhookServer()
-	srv.Register("/validate-tenet-cybozu-io-v1beta1-networkpolicyadmissionrule", &webhook.Admission{Handler: v})
+	srv.Register("/validate-tenet-cybozu-io-v1beta2-networkpolicyadmissionrule", &webhook.Admission{Handler: v})
 }

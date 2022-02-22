@@ -17,6 +17,17 @@ rules:
 - apiGroups:
   - cilium.io
   resources:
+  - ciliumclusterwidenetworkpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - cilium.io
+  resources:
   - ciliumnetworkpolicies
   verbs:
   - create

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
+	tenetv1beta2 "github.com/cybozu-go/tenet/api/v1beta2"
 	"github.com/cybozu-go/tenet/pkg/cilium"
 	cacheclient "github.com/cybozu-go/tenet/pkg/client"
 	"github.com/cybozu-go/tenet/pkg/tenet"
@@ -32,6 +32,18 @@ spec:
     - toEndpoints:
         - matchLabels:
             "k8s:io.kubernetes.pod.namespace": {{.Name}}
+`
+	intraNSCCNPTemplate = `
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+spec:
+    endpointSelector:
+        matchLabels:
+          k8s:io.kubernetes.pod.namespace: {{.Name}}
+    ingress:
+    - fromEndpoints:
+        - matchLabels:
+            "k8s.io.cilium.k8s.namespace.labels.team": {{ index .Labels "team" }}
 `
 	expectedCNPTemplate = `
 apiVersion: cilium.io/v2
@@ -65,12 +77,12 @@ spec:
 `
 )
 
-func newDummyNetworkPolicyTemplate(o client.ObjectKey, tmpl string) *tenetv1beta1.NetworkPolicyTemplate {
-	return &tenetv1beta1.NetworkPolicyTemplate{
+func newDummyNetworkPolicyTemplate(o client.ObjectKey, tmpl string) *tenetv1beta2.NetworkPolicyTemplate {
+	return &tenetv1beta2.NetworkPolicyTemplate{
 		ObjectMeta: v1.ObjectMeta{
 			Name: o.Name,
 		},
-		Spec: tenetv1beta1.NetworkPolicyTemplateSpec{
+		Spec: tenetv1beta2.NetworkPolicyTemplateSpec{
 			PolicyTemplate: tmpl,
 		},
 	}
@@ -154,15 +166,15 @@ var _ = Describe("Tenet controller", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(equality.Semantic.DeepEqual(cnp.UnstructuredContent()["spec"], expectedCNP.UnstructuredContent()["spec"])).To(BeTrue())
 
-		Eventually(func() tenetv1beta1.NetworkPolicyTemplateStatus {
-			npt := &tenetv1beta1.NetworkPolicyTemplate{}
+		Eventually(func() tenetv1beta2.NetworkPolicyTemplateStatus {
+			npt := &tenetv1beta2.NetworkPolicyTemplate{}
 			nptKey := client.ObjectKey{
 				Name: nptName,
 			}
 			err := k8sClient.Get(ctx, nptKey, npt)
 			Expect(err).NotTo(HaveOccurred())
 			return npt.Status
-		}).Should(Equal(tenetv1beta1.NetworkPolicyTemplateOK))
+		}).Should(Equal(tenetv1beta2.NetworkPolicyTemplateOK))
 	})
 
 	It("should leave opted-out namespaces alone", func() {
@@ -179,6 +191,33 @@ var _ = Describe("Tenet controller", func() {
 			}
 			return k8sClient.Get(ctx, key, cnp)
 		}).ShouldNot(Succeed())
+	})
+
+	It("should create CiliumClusterwideNetworkPolicy", func() {
+		nptName := uuid.NewString()[:16]
+		nsName := uuid.NewString()[:16]
+
+		npt := newDummyNetworkPolicyTemplate(client.ObjectKey{Name: nptName}, intraNSCCNPTemplate)
+		npt.Spec.ClusterWide = true
+		err := k8sClient.Create(ctx, npt)
+		Expect(err).NotTo(HaveOccurred())
+
+		ns := &corev1.Namespace{}
+		ns.Name = nsName
+
+		ns.SetAnnotations(map[string]string{tenet.PolicyAnnotation: nptName})
+		ns.SetLabels(map[string]string{"team": "my-team"})
+
+		err = k8sClient.Create(ctx, ns)
+		Expect(err).NotTo(HaveOccurred())
+
+		Eventually(func() error {
+			ccnp := cilium.CiliumClusterwideNetworkPolicy()
+			key := client.ObjectKey{
+				Name: fmt.Sprintf("%s-%s", nsName, nptName),
+			}
+			return k8sClient.Get(ctx, key, ccnp)
+		}).Should(Succeed())
 	})
 
 	It("should apply all opted-in templates", func() {
@@ -222,7 +261,7 @@ var _ = Describe("Tenet controller", func() {
 			return k8sClient.Get(ctx, key, cnp)
 		}).Should(Succeed())
 
-		npt := &tenetv1beta1.NetworkPolicyTemplate{}
+		npt := &tenetv1beta2.NetworkPolicyTemplate{}
 		nptKey := client.ObjectKey{
 			Name: nptName,
 		}
@@ -326,7 +365,7 @@ var _ = Describe("Tenet controller", func() {
 		shouldCreateNetworkPolicyTemplate(ctx, nptName, intraNSTemplate)
 		shouldCreateNamespace(ctx, nsName, []string{nptName})
 
-		npt := &tenetv1beta1.NetworkPolicyTemplate{}
+		npt := &tenetv1beta2.NetworkPolicyTemplate{}
 		nptKey := client.ObjectKey{
 			Name: nptName,
 		}
@@ -364,7 +403,7 @@ var _ = Describe("Tenet controller", func() {
 		shouldCreateNetworkPolicyTemplate(ctx, bmcNptName, bmcDenyTemplate)
 		shouldCreateNamespace(ctx, nsName, []string{intraNSNptName, bmcNptName})
 
-		npt := &tenetv1beta1.NetworkPolicyTemplate{}
+		npt := &tenetv1beta2.NetworkPolicyTemplate{}
 		nptKey := client.ObjectKey{
 			Name: intraNSNptName,
 		}
@@ -413,15 +452,15 @@ var _ = Describe("Tenet controller", func() {
 		shouldCreateNetworkPolicyTemplate(ctx, nptName, invalidTemplate)
 		shouldCreateNamespace(ctx, nsName, []string{nptName})
 
-		Eventually(func() tenetv1beta1.NetworkPolicyTemplateStatus {
-			npt := &tenetv1beta1.NetworkPolicyTemplate{}
+		Eventually(func() tenetv1beta2.NetworkPolicyTemplateStatus {
+			npt := &tenetv1beta2.NetworkPolicyTemplate{}
 			nptKey := client.ObjectKey{
 				Name: nptName,
 			}
 			err := k8sClient.Get(ctx, nptKey, npt)
 			Expect(err).NotTo(HaveOccurred())
 			return npt.Status
-		}).Should(Equal(tenetv1beta1.NetworkPolicyTemplateInvalid))
+		}).Should(Equal(tenetv1beta2.NetworkPolicyTemplateInvalid))
 
 		Consistently(func() error {
 			cnp := cilium.CiliumNetworkPolicy()

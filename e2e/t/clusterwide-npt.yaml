@@ -1,0 +1,17 @@
+apiVersion: tenet.cybozu.io/v1beta2
+kind: NetworkPolicyTemplate
+metadata:
+    name: clusterwide-npt
+spec:
+    clusterwide: true
+    policyTemplate: |
+      apiVersion: cilium.io/v2
+      kind: CiliumClusterwideNetworkPolicy
+      spec:
+        endpointSelector:
+          matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{.Name}}
+        ingress:
+        - fromEndpoints:
+            - matchLabels:
+                "k8s.io.cilium.k8s.namespace.labels.team": {{ index .Labels "team" }}

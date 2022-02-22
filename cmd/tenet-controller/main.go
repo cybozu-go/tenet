@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
+	tenetv1beta2 "github.com/cybozu-go/tenet/api/v1beta2"
 	"github.com/cybozu-go/tenet/controllers"
 	"github.com/cybozu-go/tenet/hooks"
 	//+kubebuilder:scaffold:imports
@@ -46,7 +46,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(tenetv1beta1.AddToScheme(scheme))
+	utilruntime.Must(tenetv1beta2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

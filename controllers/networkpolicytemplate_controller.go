@@ -40,7 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
+	tenetv1beta2 "github.com/cybozu-go/tenet/api/v1beta2"
 	"github.com/cybozu-go/tenet/pkg/cilium"
 	"github.com/cybozu-go/tenet/pkg/tenet"
 )
@@ -61,6 +61,7 @@ type NetworkPolicyTemplateReconciler struct {
 //+kubebuilder:rbac:groups=tenet.cybozu.io,resources=networkpolicytemplates/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups="cilium.io",resources=ciliumnetworkpolicies,verbs=get;list;watch;create;update;delete
+//+kubebuilder:rbac:groups="cilium.io",resources=ciliumclusterwidenetworkpolicies,verbs=get;list;watch;create;update;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -70,7 +71,7 @@ type NetworkPolicyTemplateReconciler struct {
 func (r *NetworkPolicyTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	npt := &tenetv1beta1.NetworkPolicyTemplate{}
+	npt := &tenetv1beta2.NetworkPolicyTemplate{}
 	if err := r.Get(ctx, req.NamespacedName, npt); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -94,46 +95,51 @@ func (r *NetworkPolicyTemplateReconciler) Reconcile(ctx context.Context, req ctr
 	return r.reconcileTemplate(ctx, npt)
 }
 
-func (r *NetworkPolicyTemplateReconciler) shouldDelete(npt *tenetv1beta1.NetworkPolicyTemplate, ownerRefs []v1.OwnerReference) bool {
+func (r *NetworkPolicyTemplateReconciler) shouldDelete(npt *tenetv1beta2.NetworkPolicyTemplate, ownerRefs []v1.OwnerReference) bool {
 	for _, ownerRef := range ownerRefs {
-		if ownerRef.APIVersion == tenetv1beta1.GroupVersion.String() && ownerRef.Kind == tenetv1beta1.NetworkPolicyTemplateKind && ownerRef.Name == npt.Name {
+		if ownerRef.APIVersion == tenetv1beta2.GroupVersion.String() && ownerRef.Kind == tenetv1beta2.NetworkPolicyTemplateKind && ownerRef.Name == npt.Name {
 			return true
 		}
 	}
 	return false
 }
 
-func (r *NetworkPolicyTemplateReconciler) finalize(ctx context.Context, npt *tenetv1beta1.NetworkPolicyTemplate) error {
+func (r *NetworkPolicyTemplateReconciler) finalize(ctx context.Context, npt *tenetv1beta2.NetworkPolicyTemplate) error {
 	if !controllerutil.ContainsFinalizer(npt, finalizerName) {
 		return nil
 	}
 
 	logger := log.FromContext(ctx)
 
-	cnpl := cilium.CiliumNetworkPolicyList()
-	if err := r.List(ctx, cnpl); client.IgnoreNotFound(err) != nil {
+	var npl *unstructured.UnstructuredList
+	if npt.Spec.ClusterWide {
+		npl = cilium.CiliumClusterwideNetworkPolicyList()
+	} else {
+		npl = cilium.CiliumNetworkPolicyList()
+	}
+	if err := r.List(ctx, npl); client.IgnoreNotFound(err) != nil {
 		return err
 	}
-	for _, cnp := range cnpl.Items {
-		if cnp.GetDeletionTimestamp() != nil {
+	for _, np := range npl.Items {
+		if np.GetDeletionTimestamp() != nil {
 			continue
 		}
-		if !r.shouldDelete(npt, cnp.GetOwnerReferences()) {
+		if !r.shouldDelete(npt, np.GetOwnerReferences()) {
 			continue
 		}
-		if err := r.Delete(ctx, &cnp); err != nil {
-			return fmt.Errorf("failed to delete CiliumNetworkPolicy %s: %w", cnp.GetName(), err)
+		if err := r.Delete(ctx, &np); err != nil {
+			return fmt.Errorf("failed to delete %s %s: %w", np.GetKind(), np.GetName(), err)
 		}
-		logger.Info("deleted CiliumNetworkPolicy", "name", cnp.GetName())
+		logger.Info("deleted NetworkPolicy", "name", np.GetName(), "kind", np.GetKind())
 	}
 
 	controllerutil.RemoveFinalizer(npt, finalizerName)
 	return r.Update(ctx, npt)
 }
 
-func (r *NetworkPolicyTemplateReconciler) reconcileTemplate(ctx context.Context, npt *tenetv1beta1.NetworkPolicyTemplate) (ctrl.Result, error) {
+func (r *NetworkPolicyTemplateReconciler) reconcileTemplate(ctx context.Context, npt *tenetv1beta2.NetworkPolicyTemplate) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	npt.Status = tenetv1beta1.NetworkPolicyTemplateOK
+	npt.Status = tenetv1beta2.NetworkPolicyTemplateOK
 
 	nsl := &corev1.NamespaceList{}
 	if err := r.List(ctx, nsl); err != nil {
@@ -153,14 +159,24 @@ func (r *NetworkPolicyTemplateReconciler) reconcileTemplate(ctx context.Context,
 	return ctrl.Result{}, nil
 }
 
-func (r *NetworkPolicyTemplateReconciler) reconcileNetworkPolicy(ctx context.Context, npt *tenetv1beta1.NetworkPolicyTemplate, ns corev1.Namespace) error {
+func (r *NetworkPolicyTemplateReconciler) reconcileNetworkPolicy(ctx context.Context, npt *tenetv1beta2.NetworkPolicyTemplate, ns corev1.Namespace) error {
 	logger := log.FromContext(ctx)
 
-	existingNetworkPolicy := cilium.CiliumNetworkPolicy()
-	existingNetworkPolicyObjectKey := client.ObjectKey{
-		Namespace: ns.Name,
-		Name:      npt.Name,
+	var existingNetworkPolicy *unstructured.Unstructured
+	var existingNetworkPolicyObjectKey types.NamespacedName
+	if npt.Spec.ClusterWide {
+		existingNetworkPolicy = cilium.CiliumClusterwideNetworkPolicy()
+		existingNetworkPolicyObjectKey = client.ObjectKey{
+			Name: fmt.Sprintf("%s-%s", ns.Name, npt.Name),
+		}
+	} else {
+		existingNetworkPolicy = cilium.CiliumNetworkPolicy()
+		existingNetworkPolicyObjectKey = client.ObjectKey{
+			Namespace: ns.Name,
+			Name:      npt.Name,
+		}
 	}
+
 	existingNetworkPolicyError := r.Get(ctx, existingNetworkPolicyObjectKey, existingNetworkPolicy)
 	if client.IgnoreNotFound(existingNetworkPolicyError) != nil {
 		return existingNetworkPolicyError
@@ -176,23 +192,23 @@ func (r *NetworkPolicyTemplateReconciler) reconcileNetworkPolicy(ctx context.Con
 
 	currentNetworkPolicy, err := r.compileTemplate(npt, ns)
 	if err != nil {
-		npt.Status = tenetv1beta1.NetworkPolicyTemplateInvalid
+		npt.Status = tenetv1beta2.NetworkPolicyTemplateInvalid
 		logger.Error(err, "invalid template", "name", npt.Name)
 		return err
 	}
 	if apierrors.IsNotFound(existingNetworkPolicyError) {
-		logger.Info("creating CiliumNetworkPolicy", "name", currentNetworkPolicy.GetName())
+		logger.Info("creating NetworkPolicy", "name", currentNetworkPolicy.GetName(), "kind", currentNetworkPolicy.GetKind())
 		return r.Create(ctx, currentNetworkPolicy)
 	}
 	if equality.Semantic.DeepEqual(existingNetworkPolicy.UnstructuredContent()["spec"], currentNetworkPolicy.UnstructuredContent()["spec"]) {
 		return nil
 	}
 	existingNetworkPolicy.UnstructuredContent()["spec"] = currentNetworkPolicy.DeepCopy().UnstructuredContent()["spec"]
-	logger.Info("updating CiliumNetworkPolicy", "name", existingNetworkPolicy.GetName())
+	logger.Info("updating NetworkPolicy", "name", existingNetworkPolicy.GetName(), "kind", currentNetworkPolicy.GetKind())
 	return r.Update(ctx, existingNetworkPolicy)
 }
 
-func (r *NetworkPolicyTemplateReconciler) isOptedIntoTemplate(npt *tenetv1beta1.NetworkPolicyTemplate, ns corev1.Namespace) bool {
+func (r *NetworkPolicyTemplateReconciler) isOptedIntoTemplate(npt *tenetv1beta2.NetworkPolicyTemplate, ns corev1.Namespace) bool {
 	for _, a := range strings.Split(ns.Annotations[tenet.PolicyAnnotation], ",") {
 		if a == npt.Name {
 			return true
@@ -201,9 +217,15 @@ func (r *NetworkPolicyTemplateReconciler) isOptedIntoTemplate(npt *tenetv1beta1.
 	return false
 }
 
-func (r *NetworkPolicyTemplateReconciler) compileTemplate(npt *tenetv1beta1.NetworkPolicyTemplate, ns corev1.Namespace) (*unstructured.Unstructured, error) {
-	cnp := cilium.CiliumNetworkPolicy()
-	refCNP := cilium.CiliumNetworkPolicy()
+func (r *NetworkPolicyTemplateReconciler) compileTemplate(npt *tenetv1beta2.NetworkPolicyTemplate, ns corev1.Namespace) (*unstructured.Unstructured, error) {
+	var np, refNP *unstructured.Unstructured
+	if npt.Spec.ClusterWide {
+		np = cilium.CiliumClusterwideNetworkPolicy()
+		refNP = cilium.CiliumClusterwideNetworkPolicy()
+	} else {
+		np = cilium.CiliumNetworkPolicy()
+		refNP = cilium.CiliumNetworkPolicy()
+	}
 	tpl, err := template.New(npt.Name).Parse(npt.Spec.PolicyTemplate)
 	if err != nil {
 		return nil, err
@@ -213,33 +235,36 @@ func (r *NetworkPolicyTemplateReconciler) compileTemplate(npt *tenetv1beta1.Netw
 		return nil, err
 	}
 	y := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(buf.Bytes()), buf.Len())
-	if err := y.Decode(cnp); err != nil {
+	if err := y.Decode(np); err != nil {
 		return nil, err
 	}
-	if cnp.GetAPIVersion() != refCNP.GetAPIVersion() || cnp.GetKind() != refCNP.GetKind() {
-		return nil, fmt.Errorf("invalid schema: %v", cnp.GetObjectKind().GroupVersionKind())
+	if np.GetAPIVersion() != refNP.GetAPIVersion() || np.GetKind() != refNP.GetKind() {
+		return nil, fmt.Errorf("invalid schema: %v", np.GetObjectKind().GroupVersionKind())
 	}
 
-	cnp.SetNamespace(ns.Name)
-	cnp.SetName(npt.Name)
-	if err := controllerutil.SetOwnerReference(npt, cnp, r.Scheme); err != nil {
+	if npt.Spec.ClusterWide {
+		np.SetName(fmt.Sprintf("%s-%s", ns.Name, npt.Name))
+	} else {
+		np.SetNamespace(ns.Name)
+		np.SetName(npt.Name)
+	}
+	if err := controllerutil.SetOwnerReference(npt, np, r.Scheme); err != nil {
 		return nil, err
 	}
-	return cnp, nil
+	return np, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NetworkPolicyTemplateReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	logger := log.FromContext(ctx)
-	getOwner := func(o client.Object) []string {
-		cnp := cilium.CiliumNetworkPolicy()
-		if err := mgr.GetClient().Get(ctx, client.ObjectKeyFromObject(o), cnp); err != nil {
+	getOwner := func(o client.Object, t *unstructured.Unstructured) []string {
+		if err := mgr.GetClient().Get(ctx, client.ObjectKeyFromObject(o), t); err != nil {
 			logger.Error(err, "failed to get CiliumNetworkPolicy")
 			return nil
 		}
-		owners := cnp.GetOwnerReferences()
+		owners := t.GetOwnerReferences()
 		for _, owner := range owners {
-			if owner.APIVersion == tenetv1beta1.GroupVersion.String() && owner.Kind == tenetv1beta1.NetworkPolicyTemplateKind {
+			if owner.APIVersion == tenetv1beta2.GroupVersion.String() && owner.Kind == tenetv1beta2.NetworkPolicyTemplateKind {
 				return []string{owner.Name}
 			}
 		}
@@ -247,7 +272,7 @@ func (r *NetworkPolicyTemplateReconciler) SetupWithManager(ctx context.Context, 
 	}
 	listNPTs := func(_ client.Object) []reconcile.Request {
 		ctx := context.Background()
-		var nptl tenetv1beta1.NetworkPolicyTemplateList
+		var nptl tenetv1beta2.NetworkPolicyTemplateList
 		if err := r.List(ctx, &nptl); err != nil {
 			r.Log.Error(err, "failed to list NetworkPolicyTemplates")
 			return nil
@@ -263,15 +288,23 @@ func (r *NetworkPolicyTemplateReconciler) SetupWithManager(ctx context.Context, 
 	}
 
 	filterCNP := func(o client.Object) []reconcile.Request {
-		if getOwner(o) == nil {
+		if getOwner(o, cilium.CiliumNetworkPolicy()) == nil {
+			return nil
+		}
+		return listNPTs(o)
+	}
+
+	filterCCNP := func(o client.Object) []reconcile.Request {
+		if getOwner(o, cilium.CiliumClusterwideNetworkPolicy()) == nil {
 			return nil
 		}
 		return listNPTs(o)
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&tenetv1beta1.NetworkPolicyTemplate{}).
+		For(&tenetv1beta2.NetworkPolicyTemplate{}).
 		Watches(&source.Kind{Type: &corev1.Namespace{}}, handler.EnqueueRequestsFromMapFunc(listNPTs)).
 		Watches(&source.Kind{Type: cilium.CiliumNetworkPolicy()}, handler.EnqueueRequestsFromMapFunc(filterCNP)).
+		Watches(&source.Kind{Type: cilium.CiliumClusterwideNetworkPolicy()}, handler.EnqueueRequestsFromMapFunc(filterCCNP)).
 		Complete(r)
 }

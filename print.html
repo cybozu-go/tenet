@@ -159,7 +159,7 @@
 <ul>
 <li>Allow cluster administrators to provide network policy templates tenants can opt into
 <ul>
-<li>currently <code>CiliumNetworkPolicy</code> and <code>CiliumClusterwideNetworkPolicy</code> templates are supported</li>
+<li>currently only <code>CiliumNetworkPolicy</code> templates are supported</li>
 </ul>
 </li>
 <li>Automatically generate network policies on namespaces that opt into them
@@ -177,7 +177,7 @@
 <p>Tenet provides two custom resources to cluster administrators: <a href="networkpolicytemplate.html"><code>NetworkPolicyTemplate</code></a> and <a href="networkpolicyadmissionrule.html"><code>NetworkPolicyAdmissionRule</code></a>.</p>
 <p>Tenet provides the following annotation to users and tenants: <a href="user_annotations.html"><code>tenet.cybozu.io/network-policy-template</code></a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="networkpolicytemplate"><a class="header" href="#networkpolicytemplate">NetworkPolicyTemplate</a></h1>
-<p><code>NetworkPolicyTemplate</code> enables administrators to write <code>CiliumNetworkPolicy</code> or <code>CiliumClusterwideNetworkPolicy</code> templates that tenants can opt-into via the <code>tenet.cybozu.io/network-policy-template</code> annotation in their <code>Namespace</code> resources. Templates can be supplied with values sources from the <code>.metadata</code> field of the <code>Namespace</code> resource that reference them. When annotations are placed on a root namespace managed by Accurate the annotations, and thus the templated CiliumNetworkPolicies, can be propagated to child namespaces. For instance, given the following <code>NetworkPolicyTemplate</code>,</p>
+<p><code>NetworkPolicyTemplate</code> enables administrators to write <code>CiliumNetworkPolicy</code> templates that tenants can opt-into via the <code>tenet.cybozu.io/network-policy-template</code> annotation in their <code>Namespace</code> resources. Templates can be supplied with values sources from the <code>.metadata</code> field of the <code>Namespace</code> resource that reference them. When annotations are placed on a root namespace managed by Accurate the annotations, and thus the templated CiliumNetworkPolicies, can be propagated to child namespaces. For instance, given the following <code>NetworkPolicyTemplate</code>,</p>
 <pre><code class="language-yaml"># network-policy-template.yaml
 apiVersion: tenet.cybozu.io/v1beta1
 kind: NetworkPolicyTemplate
@@ -221,7 +221,6 @@ spec:
          &quot;k8s:io.kubernetes.pod.namespace&quot;: my-namespace
 </code></pre>
 <p>If <code>my-namespace</code> is an Accurate root namespace, any of its child namespace will inherit the <code>tenet.cybozu.io/network-policy-template</code> annotation and CiliumNetworkPolicies will be created with the templates filled-in.</p>
-<p>To write <code>CiliumClusterwideNetworkPolicy</code> templates, set <code>.spec.clusterwide: true</code> on <code>NetworkPolicyTemplate</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="networkpolicyadmissionrule"><a class="header" href="#networkpolicyadmissionrule">NetworkPolicyAdmissionRule</a></h1>
 <p>To restrict the scope of whitelist permissions tenants can write via CiliumNetworkPolicies or NetworkPolicies, cluster administrators can write <code>NetworkPolicyAdmissionRule</code> resources. This allows administrators to forbid the use of specific CIDR ranges as endpoint selectors for network policies. For instance, the following <code>NetworkPolicyAdmissionRule</code> will reject network policies in namespaces that do not hold the team: neco label, i.e. all tenant namespaces, from specifing IP addresses within the 10.72.16.0/20 range for egress rules.</p>
 <pre><code class="language-yaml"># admission-rule.yaml

@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
+	tenetv1beta2 "github.com/cybozu-go/tenet/api/v1beta2"
 	"github.com/cybozu-go/tenet/pkg/cilium"
 )
 
@@ -49,7 +49,7 @@ func (v *ciliumNetworkPolicyValidator) handleDelete(_ context.Context, req admis
 	}
 	owners := cnp.GetOwnerReferences()
 	for _, owner := range owners {
-		if owner.APIVersion == tenetv1beta1.GroupVersion.String() && owner.Kind == tenetv1beta1.NetworkPolicyTemplateKind {
+		if owner.APIVersion == tenetv1beta2.GroupVersion.String() && owner.Kind == tenetv1beta2.NetworkPolicyTemplateKind {
 			if req.UserInfo.Username == v.serviceAccountName {
 				return admission.Allowed("deletion by service account")
 			}
@@ -68,7 +68,7 @@ func (v *ciliumNetworkPolicyValidator) handleCreateOrUpdate(ctx context.Context,
 	if err := v.Get(ctx, client.ObjectKey{Name: cnp.GetNamespace()}, ns); client.IgnoreNotFound(err) != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
-	var nparl tenetv1beta1.NetworkPolicyAdmissionRuleList
+	var nparl tenetv1beta2.NetworkPolicyAdmissionRuleList
 	if err := v.List(ctx, &nparl); err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
@@ -217,7 +217,7 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRSetRule(rule interf
 	return policies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherFilters(nparl *tenetv1beta1.NetworkPolicyAdmissionRuleList) ([]*net.IPNet, []*net.IPNet, error) {
+func (v *ciliumNetworkPolicyValidator) gatherFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList) ([]*net.IPNet, []*net.IPNet, error) {
 	var egressFilters, ingressFilters []*net.IPNet
 	for _, npar := range nparl.Items {
 		for _, ipRange := range npar.Spec.ForbiddenIPRanges {
@@ -226,12 +226,12 @@ func (v *ciliumNetworkPolicyValidator) gatherFilters(nparl *tenetv1beta1.Network
 				return nil, nil, err
 			}
 			switch ipRange.Type {
-			case tenetv1beta1.NetworkPolicyAdmissionRuleTypeAll:
+			case tenetv1beta2.NetworkPolicyAdmissionRuleTypeAll:
 				egressFilters = append(egressFilters, cidr)
 				ingressFilters = append(ingressFilters, cidr)
-			case tenetv1beta1.NetworkPolicyAdmissionRuleTypeEgress:
+			case tenetv1beta2.NetworkPolicyAdmissionRuleTypeEgress:
 				egressFilters = append(egressFilters, cidr)
-			case tenetv1beta1.NetworkPolicyAdmissionRuleTypeIngress:
+			case tenetv1beta2.NetworkPolicyAdmissionRuleTypeIngress:
 				ingressFilters = append(ingressFilters, cidr)
 			}
 		}
@@ -261,7 +261,7 @@ func (v *ciliumNetworkPolicyValidator) validate(egressPolicies, ingressPolicies,
 	return admission.Allowed("")
 }
 
-func (v *ciliumNetworkPolicyValidator) shouldValidate(ns *corev1.Namespace, nparl *tenetv1beta1.NetworkPolicyAdmissionRuleList) bool {
+func (v *ciliumNetworkPolicyValidator) shouldValidate(ns *corev1.Namespace, nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList) bool {
 	for _, npar := range nparl.Items {
 		for k, v := range npar.Spec.NamespaceSelector.ExcludeLabels {
 			if ns.Labels[k] == v {

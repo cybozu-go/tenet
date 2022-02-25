@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1beta2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,6 +62,7 @@ type NetworkPolicyAdmissionRuleForbiddenIPRanges struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:resource:scope=Cluster
 //+kubebuilder:subresource:status
+//+kubebuilder:storageversion
 
 // NetworkPolicyAdmissionRule is the Schema for the networkpolicyadmissionrules API.
 type NetworkPolicyAdmissionRule struct {

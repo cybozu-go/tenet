@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	tenetv1beta1 "github.com/cybozu-go/tenet/api/v1beta1"
+	tenetv1beta2 "github.com/cybozu-go/tenet/api/v1beta2"
 	"github.com/cybozu-go/tenet/pkg/cilium"
 )
 
@@ -48,17 +48,17 @@ var _ = Describe("CiliumNetworkPolicy webhook", func() {
 	ctx := context.Background()
 
 	BeforeEach(func() {
-		npar := &tenetv1beta1.NetworkPolicyAdmissionRule{
+		npar := &tenetv1beta2.NetworkPolicyAdmissionRule{
 			ObjectMeta: v1.ObjectMeta{
 				Name: "default-rule",
 			},
-			Spec: tenetv1beta1.NetworkPolicyAdmissionRuleSpec{
-				NamespaceSelector: tenetv1beta1.NetworkPolicyAdmissionRuleNamespaceSelector{
+			Spec: tenetv1beta2.NetworkPolicyAdmissionRuleSpec{
+				NamespaceSelector: tenetv1beta2.NetworkPolicyAdmissionRuleNamespaceSelector{
 					ExcludeLabels: map[string]string{
 						"team": "neco",
 					},
 				},
-				ForbiddenIPRanges: []tenetv1beta1.NetworkPolicyAdmissionRuleForbiddenIPRanges{
+				ForbiddenIPRanges: []tenetv1beta2.NetworkPolicyAdmissionRuleForbiddenIPRanges{
 					{
 						CIDR: "10.72.16.0/20",
 						Type: "egress",
@@ -77,7 +77,7 @@ var _ = Describe("CiliumNetworkPolicy webhook", func() {
 		err := k8sClient.Create(ctx, npar)
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(func() error {
-			npar := &tenetv1beta1.NetworkPolicyAdmissionRule{}
+			npar := &tenetv1beta2.NetworkPolicyAdmissionRule{}
 			key := client.ObjectKey{
 				Name: "default-rule",
 			}
@@ -86,7 +86,7 @@ var _ = Describe("CiliumNetworkPolicy webhook", func() {
 	})
 
 	AfterEach(func() {
-		err := k8sClient.DeleteAllOf(ctx, &tenetv1beta1.NetworkPolicyAdmissionRule{})
+		err := k8sClient.DeleteAllOf(ctx, &tenetv1beta2.NetworkPolicyAdmissionRule{})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -182,7 +182,7 @@ var _ = Describe("CiliumNetworkPolicy webhook", func() {
 		cnp.SetNamespace(nsName)
 		cnp.SetOwnerReferences([]v1.OwnerReference{
 			{
-				APIVersion: tenetv1beta1.GroupVersion.String(),
+				APIVersion: tenetv1beta2.GroupVersion.String(),
 				Kind:       "NetworkPolicyTemplate",
 				Name:       "dummy",
 				UID:        types.UID(uuid.NewString()),

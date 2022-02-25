@@ -33,14 +33,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-tenet-cybozu-io-v1beta1-networkpolicyadmissionrule
+      path: /validate-tenet-cybozu-io-v1beta2-networkpolicyadmissionrule
   failurePolicy: Fail
   name: vnetworkpolicyadmissionrule.kb.io
   rules:
   - apiGroups:
     - tenet.cybozu.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE

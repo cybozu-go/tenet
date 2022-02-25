@@ -16,6 +16,9 @@ var (
 	//go:embed t/bmc-deny-npt.yaml
 	bmcDenyNetworkPolicyTemplate []byte
 
+	//go:embed t/clusterwide-npt.yaml
+	clusterwideNetworkPolicyTemplate []byte
+
 	//go:embed t/bmc-deny-npar.yaml
 	bmcDenyNetworkPolicyAdmissionRule []byte
 )
@@ -36,6 +39,7 @@ var _ = BeforeSuite(func() {
 	By("setting up default NetworkPolicyTemplates")
 	kubectlSafe(intraNSNetworkPolicyTemplate, "apply", "-f", "-")
 	kubectlSafe(bmcDenyNetworkPolicyTemplate, "apply", "-f", "-")
+	kubectlSafe(clusterwideNetworkPolicyTemplate, "apply", "-f", "-")
 
 	By("setting up default NetworkPolicyAdmissionRules")
 	kubectlSafe(bmcDenyNetworkPolicyAdmissionRule, "apply", "-f", "-")

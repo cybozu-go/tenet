@@ -16,7 +16,7 @@ spec:
     singular: networkpolicytemplate
   scope: Cluster
   versions:
-  - name: v1beta1
+  - name: v1beta2
     schema:
       openAPIV3Schema:
         description: NetworkPolicyTemplate is the Schema for the networkpolicytemplates
@@ -37,6 +37,11 @@ spec:
           spec:
             description: Spec is the spec for the NetworkPolicyTemplate
             properties:
+              clusterwide:
+                default: false
+                description: ClusterWide indicates whether the generated templates
+                  are clusterwide templates
+                type: boolean
               policyTemplate:
                 description: PolicyTemplate is a template for creating NetworkPolicies
                 type: string

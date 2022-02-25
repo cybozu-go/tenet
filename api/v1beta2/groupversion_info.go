@@ -17,7 +17,7 @@ limitations under the License.
 // Package v1beta1 contains API Schema definitions for the tenet v1beta1 API group
 //+kubebuilder:object:generate=true
 //+groupName=tenet.cybozu.io
-package v1beta1
+package v1beta2
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -26,7 +26,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects.
-	GroupVersion = schema.GroupVersion{Group: "tenet.cybozu.io", Version: "v1beta1"}
+	GroupVersion = schema.GroupVersion{Group: "tenet.cybozu.io", Version: "v1beta2"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

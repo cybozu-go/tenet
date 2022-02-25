@@ -8,7 +8,7 @@ To enhance the security without sacrificing convenience, we want to provide defa
 
 ## Features
 - Allow cluster administrators to provide network policy templates tenants can opt into
-  - currently only `CiliumNetworkPolicy` templates are supported
+  - currently `CiliumNetworkPolicy` and `CiliumClusterwideNetworkPolicy` templates are supported
 - Automatically generate network policies on namespaces that opt into them
   - when used in conjunction with `Accurate`, resource generation is also performed on SubNamespaces
 - Allow cluster administrators to place restrictions on the expressivity of network policies

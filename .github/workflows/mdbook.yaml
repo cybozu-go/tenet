@@ -24,7 +24,8 @@ jobs:
     - uses: actions/checkout@v2
       with:
         ref: gh-pages
-    - run: rm -rf *
+    # do not remove helm chart related files if present
+    - run: ls | grep -v -E "index.yaml|$(basename $(git rev-parse --show-toplevel))-.*\.tgz" | xargs rm -rf
     - uses: actions/download-artifact@v2
       with:
         name: book

@@ -60,6 +60,8 @@ func (v *ciliumNetworkPolicyValidator) handleDelete(_ context.Context, req admis
 }
 
 func (v *ciliumNetworkPolicyValidator) handleCreateOrUpdate(ctx context.Context, req admission.Request) admission.Response {
+	var res admission.Response
+
 	cnp := cilium.CiliumNetworkPolicy()
 	if err := v.dec.Decode(req, cnp); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -77,24 +79,19 @@ func (v *ciliumNetworkPolicyValidator) handleCreateOrUpdate(ctx context.Context,
 		return admission.Allowed("")
 	}
 
-	egressPolicies, ingressPolicies, err := v.gatherPolicies(cnp)
-	if err != nil {
-		return admission.Errored(http.StatusBadRequest, err)
+	res = v.validateIP(nparl, cnp)
+	if !res.Allowed {
+		return res
 	}
 
-	egressFilters, ingressFilters, err := v.gatherFilters(&nparl)
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
-	}
-
-	return v.validate(egressPolicies, ingressPolicies, egressFilters, ingressFilters)
+	return res
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPolicies(cnp *unstructured.Unstructured) ([]*net.IPNet, []*net.IPNet, error) {
+func (v *ciliumNetworkPolicyValidator) gatherIPPolicies(cnp *unstructured.Unstructured) ([]*net.IPNet, []*net.IPNet, error) {
 	var egressPolicies, ingressPolicies []*net.IPNet
 	cnpSpec, found, _ := unstructured.NestedMap(cnp.UnstructuredContent(), "spec")
 	if found {
-		e, i, err := v.gatherPoliciesFromRule(cnpSpec)
+		e, i, err := v.gatherIPPoliciesFromRule(cnpSpec)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -108,7 +105,7 @@ func (v *ciliumNetworkPolicyValidator) gatherPolicies(cnp *unstructured.Unstruct
 			if !ok {
 				return nil, nil, fmt.Errorf("unexpected spec format")
 			}
-			e, i, err := v.gatherPoliciesFromRule(rule)
+			e, i, err := v.gatherIPPoliciesFromRule(rule)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -119,19 +116,19 @@ func (v *ciliumNetworkPolicyValidator) gatherPolicies(cnp *unstructured.Unstruct
 	return egressPolicies, ingressPolicies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRule(rule map[string]interface{}) ([]*net.IPNet, []*net.IPNet, error) {
-	egressPolicies, err := v.gatherPoliciesFromRuleType(rule, cilium.EgressRule)
+func (v *ciliumNetworkPolicyValidator) gatherIPPoliciesFromRule(rule map[string]interface{}) ([]*net.IPNet, []*net.IPNet, error) {
+	egressPolicies, err := v.gatherIPPoliciesFromRuleType(rule, cilium.EgressRule)
 	if err != nil {
 		return nil, nil, err
 	}
-	ingressPolicies, err := v.gatherPoliciesFromRuleType(rule, cilium.IngressRule)
+	ingressPolicies, err := v.gatherIPPoliciesFromRuleType(rule, cilium.IngressRule)
 	if err != nil {
 		return nil, nil, err
 	}
 	return egressPolicies, ingressPolicies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRuleType(rule map[string]interface{}, rt cilium.RuleType) ([]*net.IPNet, error) {
+func (v *ciliumNetworkPolicyValidator) gatherIPPoliciesFromRuleType(rule map[string]interface{}, rt cilium.RuleType) ([]*net.IPNet, error) {
 	subRule := rule[rt.Type]
 	if subRule == nil {
 		return nil, nil
@@ -146,13 +143,13 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRuleType(rule map[strin
 		if !ok {
 			return nil, fmt.Errorf("unexpected policy format")
 		}
-		p, err := v.gatherPoliciesFromCIDRRule(rMap[rt.CIDRKey])
+		p, err := v.gatherIPPoliciesFromCIDRRule(rMap[rt.CIDRKey])
 		if err != nil {
 			return nil, err
 		}
 		policies = append(policies, p...)
 
-		p, err = v.gatherPoliciesFromCIDRSetRule(rMap[rt.CIDRSetKey])
+		p, err = v.gatherIPPoliciesFromCIDRSetRule(rMap[rt.CIDRSetKey])
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +158,7 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRuleType(rule map[strin
 	return policies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRRule(rule interface{}) ([]*net.IPNet, error) {
+func (v *ciliumNetworkPolicyValidator) gatherIPPoliciesFromCIDRRule(rule interface{}) ([]*net.IPNet, error) {
 	if rule == nil {
 		return nil, nil
 	}
@@ -187,7 +184,7 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRRule(rule interface
 	return policies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRSetRule(rule interface{}) ([]*net.IPNet, error) {
+func (v *ciliumNetworkPolicyValidator) gatherIPPoliciesFromCIDRSetRule(rule interface{}) ([]*net.IPNet, error) {
 	if rule == nil {
 		return nil, nil
 	}
@@ -217,7 +214,7 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRSetRule(rule interf
 	return policies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList) ([]*net.IPNet, []*net.IPNet, error) {
+func (v *ciliumNetworkPolicyValidator) gatherIPFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList) ([]*net.IPNet, []*net.IPNet, error) {
 	var egressFilters, ingressFilters []*net.IPNet
 	for _, npar := range nparl.Items {
 		for _, ipRange := range npar.Spec.ForbiddenIPRanges {
@@ -239,21 +236,30 @@ func (v *ciliumNetworkPolicyValidator) gatherFilters(nparl *tenetv1beta2.Network
 	return egressFilters, ingressFilters, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) intersect(cidr1, cidr2 *net.IPNet) bool {
+func (v *ciliumNetworkPolicyValidator) intersectIP(cidr1, cidr2 *net.IPNet) bool {
 	return cidr1.Contains(cidr2.IP) || cidr2.Contains(cidr1.IP)
 }
 
-func (v *ciliumNetworkPolicyValidator) validate(egressPolicies, ingressPolicies, egressFilters, ingressFilters []*net.IPNet) admission.Response {
+func (v *ciliumNetworkPolicyValidator) validateIP(nparl tenetv1beta2.NetworkPolicyAdmissionRuleList, cnp *unstructured.Unstructured) admission.Response {
+	egressPolicies, ingressPolicies, err := v.gatherIPPolicies(cnp)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	egressFilters, ingressFilters, err := v.gatherIPFilters(&nparl)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
 	for _, egressPolicy := range egressPolicies {
 		for _, egressFilter := range egressFilters {
-			if v.intersect(egressPolicy, egressFilter) {
+			if v.intersectIP(egressPolicy, egressFilter) {
 				return admission.Denied("an egress policy is requesting a forbidden IP range")
 			}
 		}
 	}
 	for _, ingressPolicy := range ingressPolicies {
 		for _, ingressFilter := range ingressFilters {
-			if v.intersect(ingressPolicy, ingressFilter) {
+			if v.intersectIP(ingressPolicy, ingressFilter) {
 				return admission.Denied("an ingress policy is requesting a forbidden IP range")
 			}
 		}

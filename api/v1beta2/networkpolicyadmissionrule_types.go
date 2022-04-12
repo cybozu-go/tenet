@@ -40,6 +40,8 @@ type NetworkPolicyAdmissionRuleSpec struct {
 	NamespaceSelector NetworkPolicyAdmissionRuleNamespaceSelector `json:"namespaceSelector,omitempty"`
 	// ForbiddenIPRanges defines IP ranges whose usage must be forbidden in network policies.
 	ForbiddenIPRanges []NetworkPolicyAdmissionRuleForbiddenIPRanges `json:"forbiddenIPRanges,omitempty"`
+	// ForbiddenEntities defines entities whose usage must be forbidden in network policies.
+	ForbiddenEntities []NetworkPolicyAdmissionRuleForbiddenEntity `json:"forbiddenEntities,omitempty"`
 }
 
 // NetworkPolicyAdmissionRuleNamespaceSelector defines how namespaces should be selected.
@@ -52,6 +54,17 @@ type NetworkPolicyAdmissionRuleNamespaceSelector struct {
 type NetworkPolicyAdmissionRuleForbiddenIPRanges struct {
 	// CIDR range.
 	CIDR string `json:"cidr"`
+
+	// Type of connection the rule applies to.
+	// +kubebuilder:validation:Enum=egress;ingress;all
+	// +default:"all"
+	Type NetworkPolicyAdmissionRuleType `json:"type"`
+}
+
+// NetworkPolicyAdmissionRuleForbiddenEntity defines forbidden entities.
+type NetworkPolicyAdmissionRuleForbiddenEntity struct {
+	// Entity name.
+	Entity string `json:"entity"`
 
 	// Type of connection the rule applies to.
 	// +kubebuilder:validation:Enum=egress;ingress;all

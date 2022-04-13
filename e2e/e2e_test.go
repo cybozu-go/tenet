@@ -32,6 +32,9 @@ var (
 	//go:embed t/bmc-allow-cnp.yaml
 	bmcAllowCiliumNetworkPolicy []byte
 
+	//go:embed t/node-entity-allow-cnp.yaml
+	nodeEntityAllowCiliumNetworkPolicy []byte
+
 	//go:embed t/legal-cnp.yaml
 	legalCiliumNetworkPolicy []byte
 )
@@ -277,6 +280,21 @@ var _ = Describe("NetworkPolicyAdmissionRule", func() {
 
 		By("applying bmc-allow CiliumNetworkPolicy")
 		_, err := kubectl(bmcAllowCiliumNetworkPolicy, "apply", "-n", nsName, "-f", "-")
+		Expect(err).To(HaveOccurred())
+
+		Consistently(func() error {
+			return getCNPInNamespace(dummyPolicyName, nsName)
+		}).ShouldNot(Succeed())
+	})
+
+	It("should reject a CiliumNetworkPolicy with forbidden entity", func() {
+		By("setting up namespace")
+		nsName := uuid.NewString()
+		kubectlSafe(nil, "create", "ns", nsName)
+		kubectlSafe(nil, "label", "ns", nsName, "team=tenant")
+
+		By("applying node-allow CiliumNetworkPolicy")
+		_, err := kubectl(nodeEntityAllowCiliumNetworkPolicy, "apply", "-n", nsName, "-f", "-")
 		Expect(err).To(HaveOccurred())
 
 		Consistently(func() error {

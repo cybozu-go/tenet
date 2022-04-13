@@ -1,0 +1,13 @@
+apiVersion: tenet.cybozu.io/v1beta2
+kind: NetworkPolicyAdmissionRule
+metadata:
+    name: node-deny
+spec:
+    namespaceSelector:
+      excludeLabels:
+        team: neco
+    forbiddenEntities:
+      - entity: host
+        type: all
+      - entity: remote-node
+        type: all

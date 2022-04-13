@@ -82,7 +82,7 @@ func (v *ciliumNetworkPolicyValidator) handleCreateOrUpdate(ctx context.Context,
 		return res
 	}
 
-	return res
+	return v.validateEntity(nparl, cnp)
 }
 
 func (v *ciliumNetworkPolicyValidator) validateIP(nparl tenetv1beta2.NetworkPolicyAdmissionRuleList, cnp *unstructured.Unstructured) admission.Response {
@@ -106,6 +106,29 @@ func (v *ciliumNetworkPolicyValidator) validateIP(nparl tenetv1beta2.NetworkPoli
 		for _, ingressFilter := range ingressFilters {
 			if v.intersectIP(ingressPolicy, ingressFilter) {
 				return admission.Denied("an ingress policy is requesting a forbidden IP range")
+			}
+		}
+	}
+	return admission.Allowed("")
+}
+
+func (v *ciliumNetworkPolicyValidator) validateEntity(nparl tenetv1beta2.NetworkPolicyAdmissionRuleList, cnp *unstructured.Unstructured) admission.Response {
+	egressPolicies, ingressPolicies, err := v.gatherEntityPolicies(cnp)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+	egressFilters, ingressFilters := v.gatherEntityFilters(&nparl)
+	for _, egressPolicy := range egressPolicies {
+		for _, egressFilter := range egressFilters {
+			if egressPolicy == egressFilter {
+				return admission.Denied("an egress policy is requesting a forbidden entity")
+			}
+		}
+	}
+	for _, ingressPolicy := range ingressPolicies {
+		for _, ingressFilter := range ingressFilters {
+			if ingressPolicy == ingressFilter {
+				return admission.Denied("an ingress policy is requesting a forbidden entity")
 			}
 		}
 	}

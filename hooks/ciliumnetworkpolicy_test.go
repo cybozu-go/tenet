@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"fmt"
 
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
@@ -25,10 +26,14 @@ var (
 	egressForbiddenCIDRSet []byte
 	//go:embed t/egress-forbidden-cidr.yaml
 	egressForbiddenCIDR []byte
+	//go:embed t/egress-forbidden-entity.yaml
+	egressForbiddenEntity []byte
 	//go:embed t/ingress-forbidden-cidrset.yaml
 	ingressForbiddenCIDRSet []byte
 	//go:embed t/ingress-forbidden-cidr.yaml
 	ingressForbiddenCIDR []byte
+	//go:embed t/ingress-forbidden-entity.yaml
+	ingressForbiddenEntity []byte
 	//go:embed t/either-forbidden.yaml
 	eitherForbidden []byte
 	//go:embed t/multiple-cnp.yaml
@@ -70,6 +75,20 @@ var _ = Describe("CiliumNetworkPolicy webhook", func() {
 					{
 						CIDR: "10.78.16.0/20",
 						Type: "all",
+					},
+				},
+				ForbiddenEntities: []tenetv1beta2.NetworkPolicyAdmissionRuleForbiddenEntity{
+					{
+						Entity: "host",
+						Type:   "egress",
+					},
+					{
+						Entity: "remote-node",
+						Type:   "egress",
+					},
+					{
+						Entity: "world",
+						Type:   "all",
 					},
 				},
 			},
@@ -125,11 +144,27 @@ var _ = Describe("CiliumNetworkPolicy webhook", func() {
 		err := k8sClient.Create(ctx, ns)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = createCiliumNetworkPolicy(ctx, nsName, egressForbiddenCIDR)
-		Expect(err).To(HaveOccurred())
-
-		err = createCiliumNetworkPolicy(ctx, nsName, egressForbiddenCIDRSet)
-		Expect(err).To(HaveOccurred())
+		cases := []struct {
+			name     string
+			manifest []byte
+		}{
+			{
+				name:     "egress with forbidden CIDR",
+				manifest: egressForbiddenCIDR,
+			},
+			{
+				name:     "egress with forbidden CIDRSet",
+				manifest: egressForbiddenCIDRSet,
+			},
+			{
+				name:     "egress with forbidden entity",
+				manifest: egressForbiddenEntity,
+			},
+		}
+		for _, tc := range cases {
+			By(fmt.Sprintf("applying %s", tc.name))
+			Expect(createCiliumNetworkPolicy(ctx, nsName, tc.manifest)).To(HaveOccurred())
+		}
 	})
 
 	It("should reject CiliumNetworkPolicies with forbidden ingress definition", func() {
@@ -139,11 +174,27 @@ var _ = Describe("CiliumNetworkPolicy webhook", func() {
 		err := k8sClient.Create(ctx, ns)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = createCiliumNetworkPolicy(ctx, nsName, ingressForbiddenCIDR)
-		Expect(err).To(HaveOccurred())
-
-		err = createCiliumNetworkPolicy(ctx, nsName, ingressForbiddenCIDRSet)
-		Expect(err).To(HaveOccurred())
+		cases := []struct {
+			name     string
+			manifest []byte
+		}{
+			{
+				name:     "ingress with forbidden CIDR",
+				manifest: ingressForbiddenCIDR,
+			},
+			{
+				name:     "ingress with forbidden CIDRSet",
+				manifest: ingressForbiddenCIDRSet,
+			},
+			{
+				name:     "ingress with forbidden entity",
+				manifest: ingressForbiddenEntity,
+			},
+		}
+		for _, tc := range cases {
+			By(fmt.Sprintf("applying %s", tc.name))
+			Expect(createCiliumNetworkPolicy(ctx, nsName, tc.manifest)).To(HaveOccurred())
+		}
 	})
 
 	It("should reject CiliumNetworkPolicies with forbidden ingress or egress definition", func() {

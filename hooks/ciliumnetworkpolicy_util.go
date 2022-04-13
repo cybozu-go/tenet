@@ -76,6 +76,28 @@ func (v *ciliumNetworkPolicyValidator) gatherIPFilters(nparl *tenetv1beta2.Netwo
 	return egressFilters, ingressFilters, nil
 }
 
+func (v *ciliumNetworkPolicyValidator) gatherEntityPolicies(cnp *unstructured.Unstructured) ([]string, []string, error) {
+	return v.gatherPolicies(cnp, cilium.EntityRuleKey, v.gatherPoliciesFromStringRule)
+}
+
+func (v *ciliumNetworkPolicyValidator) gatherEntityFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList) ([]string, []string) {
+	var egressFilters, ingressFilters []string
+	for _, npar := range nparl.Items {
+		for _, entity := range npar.Spec.ForbiddenEntities {
+			switch entity.Type {
+			case tenetv1beta2.NetworkPolicyAdmissionRuleTypeAll:
+				egressFilters = append(egressFilters, entity.Entity)
+				ingressFilters = append(ingressFilters, entity.Entity)
+			case tenetv1beta2.NetworkPolicyAdmissionRuleTypeEgress:
+				egressFilters = append(egressFilters, entity.Entity)
+			case tenetv1beta2.NetworkPolicyAdmissionRuleTypeIngress:
+				ingressFilters = append(ingressFilters, entity.Entity)
+			}
+		}
+	}
+	return egressFilters, ingressFilters
+}
+
 func (v *ciliumNetworkPolicyValidator) intersectIP(cidr1, cidr2 *net.IPNet) bool {
 	return cidr1.Contains(cidr2.IP) || cidr2.Contains(cidr1.IP)
 }

@@ -238,6 +238,13 @@ spec:
         type: egress
 </code></pre>
 <p>IP address restrictions can be applied on ingress or egress type network policies. When <code>type: all</code> is specified, the restrictions apply to both ingress and egress.</p>
+<h2 id="specifications"><a class="header" href="#specifications">Specifications</a></h2>
+<h3 id="namespaceselector"><a class="header" href="#namespaceselector">namespaceSelector</a></h3>
+<p>This selects namespaces for which the admission rules apply.</p>
+<h3 id="forbiddenipranges"><a class="header" href="#forbiddenipranges">forbiddenIPRanges</a></h3>
+<p>This defines IP ranges, in CIDR form, against which users cannot define network policies.</p>
+<h3 id="forbiddenentities"><a class="header" href="#forbiddenentities">forbiddenEntities</a></h3>
+<p>This defines Cilium entities that users are not allowed to refer to in their network policies.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="template-opt-in"><a class="header" href="#template-opt-in">Template Opt-in</a></h1>
 <p>Tenants and users can opt into network policy templates via the following annotation placed on <code>Namespace</code> resources:</p>
 <ul>

@@ -52,6 +52,28 @@ spec:
             description: NetworkPolicyAdmissionRuleSpec defines the desired state
               of NetworkPolicyAdmissionRule.
             properties:
+              forbiddenEntities:
+                description: ForbiddenEntities defines entities whose usage must be
+                  forbidden in network policies.
+                items:
+                  description: NetworkPolicyAdmissionRuleForbiddenEntity defines forbidden
+                    entities.
+                  properties:
+                    entity:
+                      description: Entity name.
+                      type: string
+                    type:
+                      description: Type of connection the rule applies to.
+                      enum:
+                      - egress
+                      - ingress
+                      - all
+                      type: string
+                  required:
+                  - entity
+                  - type
+                  type: object
+                type: array
               forbiddenIPRanges:
                 description: ForbiddenIPRanges defines IP ranges whose usage must
                   be forbidden in network policies.

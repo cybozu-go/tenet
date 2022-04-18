@@ -1,0 +1,10 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: "egress-with-forbidden-entity"
+spec:
+  endpointSelector: {}
+  egress:
+  - toEntities:
+    - host
+    - remote-node

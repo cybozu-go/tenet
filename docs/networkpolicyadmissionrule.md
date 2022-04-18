@@ -17,3 +17,17 @@ spec:
 ```
 
 IP address restrictions can be applied on ingress or egress type network policies. When `type: all` is specified, the restrictions apply to both ingress and egress.
+
+## Specifications
+
+### namespaceSelector
+
+This selects namespaces for which the admission rules apply.
+
+### forbiddenIPRanges
+
+This defines IP ranges, in CIDR form, against which users cannot define network policies.
+
+### forbiddenEntities
+
+This defines Cilium entities that users are not allowed to refer to in their network policies.

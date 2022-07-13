@@ -175,13 +175,13 @@ It should look like:</p>
 <li>
 <p>Determine a new version number. Then set <code>VERSION</code> variable.</p>
 <pre><code class="language-console"># Set VERSION and confirm it. It should not have &quot;v&quot; prefix.
-$ VERSION=x.y.x
+$ VERSION=x.y.z
 $ echo $VERSION
 </code></pre>
 </li>
 <li>
 <p>Make a branch to release</p>
-<pre><code class="language-console">$ git neco dev &quot;$VERSION&quot;`
+<pre><code class="language-console">$ git neco dev &quot;bump-$VERSION&quot;
 </code></pre>
 </li>
 <li>
@@ -199,7 +199,7 @@ $ git neco review
 <li>
 <p>Add a git tag to the main HEAD, then push it.</p>
 <pre><code class="language-console"># Set VERSION again.
-$ VERSION=x.y.x
+$ VERSION=x.y.z
 $ echo $VERSION
 
 $ git checkout main

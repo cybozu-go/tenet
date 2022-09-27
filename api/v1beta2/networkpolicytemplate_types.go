@@ -21,7 +21,7 @@ import (
 )
 
 // NetworkPolicyTemplateStatus defines the observed state of NetworkPolicyTemplate
-//+kubebuilder:validation:Enum=ok;invalid
+// +kubebuilder:validation:Enum=ok;invalid
 type NetworkPolicyTemplateStatus string
 
 const (

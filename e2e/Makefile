@@ -35,7 +35,7 @@ start: $(KIND) $(KUBECTL) $(HELM)
 .PHONY: test
 test:
 	env PATH=$$(pwd)/../bin:$$PATH RUN_E2E=1 \
-		go test -v -race . -ginkgo.progress -ginkgo.v -ginkgo.failFast
+		go test -v -race . -ginkgo.progress -ginkgo.v -ginkgo.fail-fast
 
 .PHONY: logs
 logs:

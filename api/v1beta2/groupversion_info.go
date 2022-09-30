@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1beta1 contains API Schema definitions for the tenet v1beta1 API group
-//+kubebuilder:object:generate=true
-//+groupName=tenet.cybozu.io
+// +kubebuilder:object:generate=true
+// +groupName=tenet.cybozu.io
 package v1beta2
 
 import (

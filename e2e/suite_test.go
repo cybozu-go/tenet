@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -47,4 +47,4 @@ var _ = BeforeSuite(func() {
 	By("setting up default NetworkPolicyAdmissionRules")
 	kubectlSafe(bmcDenyNetworkPolicyAdmissionRule, "apply", "-f", "-")
 	kubectlSafe(nodeDenyNetworkPolicyAdmissionRule, "apply", "-f", "-")
-}, 60)
+})

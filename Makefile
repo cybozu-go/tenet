@@ -73,7 +73,7 @@ crds:
 .PHONY: test
 test: manifests generate fmt vet crds setup-envtest ## Run tests.
 	source <($(SETUP_ENVTEST) use -p env); \
-		go test -v -count 1 -race ./controllers -ginkgo.progress -ginkgo.v -ginkgo.failFast -coverprofile controllers-cover.out
+		go test -v -count 1 -race ./controllers -ginkgo.progress -ginkgo.v -ginkgo.fail-fast -coverprofile controllers-cover.out
 	source <($(SETUP_ENVTEST) use -p env); \
 		go test -v -count 1 -race ./hooks -ginkgo.progress -ginkgo.v -coverprofile hooks-cover.out
 
@@ -149,7 +149,7 @@ TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
+GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef

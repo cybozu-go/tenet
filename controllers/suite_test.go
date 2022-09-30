@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -92,7 +92,7 @@ var _ = BeforeSuite(func() {
 	ns.Name = "tenet-controller"
 	err = k8sClient.Create(context.Background(), ns)
 	Expect(err).NotTo(HaveOccurred())
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")

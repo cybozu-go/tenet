@@ -5,6 +5,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2022-09-30
+
+### Changed
+- Update dependencies (#16)
+
 ## [0.3.0] - 2022-04-18
 
 ### Added
@@ -29,7 +34,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 ### Removed
 
-[Unreleased]: https://github.com/cybozu-go/neco-template/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/cybozu-go/neco-template/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/cybozu-go/neco-template/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/cybozu-go/neco-template/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/cybozu-go/neco-template/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/cybozu-go/neco-template/compare/eb69a70ad3b330d52f1165ac4a95f6948a3cf658...v0.1.0

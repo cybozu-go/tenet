@@ -5,6 +5,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.1] - 2022-12-15
+
+### Changed
+- Update cilium to 1.12.4 (#20)
+
 ## [0.4.0] - 2022-09-30
 
 ### Changed
@@ -34,7 +39,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 ### Removed
 
-[Unreleased]: https://github.com/cybozu-go/tenet/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/cybozu-go/tenet/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/cybozu-go/tenet/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/cybozu-go/tenet/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/cybozu-go/tenet/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/cybozu-go/tenet/compare/v0.1.0...v0.2.0

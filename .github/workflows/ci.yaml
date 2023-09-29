@@ -63,22 +63,22 @@ jobs:
         k8s-version: ["1.24.12", "1.25.8", "1.26.3"]
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v3
-      with:
-        go-version-file: go.mod
-    - run: make start KUBERNETES_VERSION=${{ matrix.k8s-version }}
-      working-directory: e2e
-    - run: make test
-      working-directory: e2e
-    - run: make logs
-      working-directory: e2e
-      if: always()
-    - uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: logs-${{ matrix.k8s-version }}.tar.gz
-        path: e2e/logs.tar.gz
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - run: make start KUBERNETES_VERSION=${{ matrix.k8s-version }}
+        working-directory: e2e
+      - run: make test
+        working-directory: e2e
+      - run: make logs
+        working-directory: e2e
+        if: always()
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: logs-${{ matrix.k8s-version }}.tar.gz
+          path: e2e/logs.tar.gz
   dry-run:
     name: Dry-run release
     runs-on: ubuntu-22.04

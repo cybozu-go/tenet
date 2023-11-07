@@ -8,7 +8,6 @@ import (
 
 	tenetv1beta2 "github.com/cybozu-go/tenet/api/v1beta2"
 	"github.com/cybozu-go/tenet/pkg/cilium"
-	cacheclient "github.com/cybozu-go/tenet/pkg/client"
 	"github.com/cybozu-go/tenet/pkg/tenet"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -20,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 const (
@@ -112,10 +112,16 @@ var _ = Describe("Tenet controller", func() {
 
 	BeforeEach(func() {
 		mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-			Scheme:             scheme,
-			LeaderElection:     false,
-			MetricsBindAddress: "0",
-			NewClient:          cacheclient.NewCachingClient,
+			Scheme:         scheme,
+			LeaderElection: false,
+			Metrics: metricsserver.Options{
+				BindAddress: "0",
+			},
+			Client: client.Options{
+				Cache: &client.CacheOptions{
+					Unstructured: true,
+				},
+			},
 		})
 		Expect(err).NotTo(HaveOccurred())
 

@@ -1,6 +1,10 @@
 include Makefile.versions
 BIN_DIR := $(shell pwd)/bin
+WORKFLOWS_DIR := $(shell pwd)/.github/workflows
 MDBOOK := $(BIN_DIR)/mdbook
+
+GH := $(BIN_DIR)/gh
+YQ := $(BIN_DIR)/yq
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
@@ -38,6 +42,22 @@ all: build
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+.PHONY: setup
+setup: download-tools ## Setup
+
+.PHONY: download-tools
+download-tools: $(GH) $(YQ)
+
+$(GH):
+	mkdir -p $(BIN_DIR)
+	wget -qO - https://github.com/cli/cli/releases/download/v$(GH_VERSION)/gh_$(GH_VERSION)_linux_amd64.tar.gz | tar -zx -O gh_$(GH_VERSION)_linux_amd64/bin/gh > $@
+	chmod +x $@
+
+$(YQ):
+	mkdir -p $(BIN_DIR)
+	wget -qO $@ https://github.com/mikefarah/yq/releases/download/v$(YQ_VERSION)/yq_linux_amd64
+	chmod +x $@
+
 ##@ Development
 
 .PHONY: manifests
@@ -67,8 +87,8 @@ lint:
 .PHONY: crds
 crds:
 	mkdir -p test/crd/
-	curl -fsL -o test/crd/ciliumnetworkpolicies.yaml https://github.com/cilium/cilium/raw/$(CILIUM_VERSION)/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumnetworkpolicies.yaml
-	curl -fsL -o test/crd/ciliumclusterwidenetworkpolicies.yaml https://github.com/cilium/cilium/raw/$(CILIUM_VERSION)/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumclusterwidenetworkpolicies.yaml
+	curl -fsL -o test/crd/ciliumnetworkpolicies.yaml https://github.com/cilium/cilium/raw/v$(CILIUM_VERSION)/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumnetworkpolicies.yaml
+	curl -fsL -o test/crd/ciliumclusterwidenetworkpolicies.yaml https://github.com/cilium/cilium/raw/v$(CILIUM_VERSION)/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumclusterwidenetworkpolicies.yaml
 
 .PHONY: test
 test: manifests generate fmt vet crds setup-envtest ## Run tests.
@@ -133,6 +153,80 @@ $(HELM):
 	curl -L -sS https://get.helm.sh/helm-v$(HELM_VERSION)-linux-amd64.tar.gz \
 	  | tar xz -C $(BIN_DIR) --strip-components 1 linux-amd64/helm
 
+##@ Maintenance
+.PHONY: login-gh
+login-gh: ## Login to GitHub
+	if ! $(GH) auth status 2>/dev/null; then \
+		echo; \
+		echo '!! You need login to GitHub to proceed. Please follow the next command with "Authenticate Git with your GitHub credentials? (Y)".'; \
+		echo; \
+		$(GH) auth login -h github.com -p HTTPS -w; \
+	fi
+
+.PHONY: logout-gh
+logout-gh: ## Logout from GitHub
+	$(GH) auth logout
+
+.PHONY: version
+version: login-gh update-kustomize-version ## Update dependent versions
+	$(call update-version,actions/checkout,ACTIONS_CHECKOUT_VERSION,1)
+	$(call update-version,actions/download-artifact,ACTIONS_DOWNLOAD_ARTIFACT_VERSION,1)
+	$(call update-version,actions/setup-go,ACTIONS_SETUP_GO_VERSION,1)
+	$(call update-version,actions/setup-python,ACTIONS_SETUP_PYTHON_VERSION,1)
+	$(call update-version,actions/upload-artifact,ACTIONS_UPLOAD_ARTIFACT_VERSION,1)
+	$(call update-version,azure/setup-helm,AZURE_SETUP_HELM_VERSION,1)
+	$(call update-version,GoogleContainerTools/container-structure-test,CST_VERSION)
+	$(call update-version,docker/login-action,DOCKER_LOGIN_VERSION,1)
+	$(call update-version,docker/setup-buildx-action,DOCKER_SETUP_BUILDX_VERSION,1)
+	$(call update-version,docker/setup-qemu-action,DOCKER_SETUP_QEMU_VERSION,1)
+	$(call update-version,goreleaser/goreleaser,GORELEASER_VERSION)
+	$(call update-version,goreleaser/goreleaser-action,GORELEASER_ACTION_VERSION)
+	$(call update-version,helm/chart-testing-action,HELM_CHART_TESTING_VESRION)
+	$(call update-hash,helm/chart-testing-action,HELM_CHART_TESTING_HASH)
+	$(call update-version,helm/kind-action,HELM_KIND_VERSION)
+	$(call update-hash,helm/kind-action,HELM_KIND_HASH)
+	$(call update-version,helm/helm,HELM_VERSION)
+	$(call update-version,kubernetes-sigs/kind,KIND_VERSION)
+	$(call update-version,rust-lang/mdBook,MDBOOK_VERSION)
+
+	$(call update-version-quay,cert-manager,CERT_MANAGER_VERSION)
+	$(call update-version-quay,cilium,CILIUM_VERSION)
+
+.PHONY: update-kustomize-version
+update-kustomize-version:
+	$(call get-latest-quay-tag,argocd)
+	NEW_VERSION=$$(docker run quay.io/cybozu/argocd:$(latest_tag) kustomize version | cut -c2-); \
+	sed -i -e "s/KUSTOMIZE_VERSION := .*/KUSTOMIZE_VERSION := $${NEW_VERSION}/g" Makefile.versions
+
+.PHONY: update-actions
+update-actions:
+	$(call update-trusted-action,actions/checkout,$(ACTIONS_CHECKOUT_VERSION))
+	$(call update-trusted-action,actions/download-artifact,$(ACTIONS_DOWNLOAD_ARTIFACT_VERSION))
+	$(call update-trusted-action,actions/setup-go,$(ACTIONS_SETUP_GO_VERSION))
+	$(call update-trusted-action,actions/setup-python,$(ACTIONS_SETUP_PYTHON_VERSION))
+	$(call update-trusted-action,actions/upload-artifact,$(ACTIONS_UPLOAD_ARTIFACT_VERSION))
+	$(call update-trusted-action,azure/setup-helm,$(AZURE_SETUP_HELM_VERSION))
+	$(call update-trusted-action,docker/login-action,$(DOCKER_LOGIN_VERSION))
+	$(call update-trusted-action,docker/setup-buildx-action,$(DOCKER_SETUP_BUILDX_VERSION))
+	$(call update-trusted-action,docker/setup-qemu-action,$(DOCKER_SETUP_QEMU_VERSION))
+	$(call update-trusted-action,goreleaser/goreleaser-action,$(GORELEASER_ACTION_VERSION))
+	$(call update-normal-action,helm/chart-testing-action,$(HELM_CHART_TESTING_VESRION),$(HELM_CHART_TESTING_HASH))
+	$(call update-normal-action,helm/kind-action,$(HELM_KIND_VERSION),$(HELM_KIND_HASH))
+	$(call update-goreleaser,$(GORELEASER_VERSION))
+	$(call update-helm,$(HELM_VERSION))
+	$(call update-kind,$(KIND_VERSION))
+
+.PHONY: maintenance
+maintenance: ## Update dependent manifests
+	$(MAKE) update-actions
+
+.PHONY: list-actions
+list-actions: ## List used GitHub Actions
+	@{ for i in $(shell ls $(WORKFLOWS_DIR)); do \
+		$(YQ) '.. | select(has("uses")).uses' $(WORKFLOWS_DIR)/$$i; \
+	done } | sort | uniq
+
+##@ Test
 SETUP_ENVTEST = $(BIN_DIR)/setup-envtest
 .PHONY: setup-envtest
 setup-envtest: $(SETUP_ENVTEST) ## Download envtest-setup locally if necessary.
@@ -172,3 +266,86 @@ $(CONTAINER_STRUCTURE_TEST):
 	mkdir -p $(BIN_DIR)
 	curl -fsL -o $(CONTAINER_STRUCTURE_TEST) https://storage.googleapis.com/container-structure-test/v$(CST_VERSION)/container-structure-test-linux-amd64
 	chmod +x $(CONTAINER_STRUCTURE_TEST)
+
+# usage: get-latest-gh OWNER/REPO
+define get-latest-gh
+	$(eval latest_gh := $(shell $(GH) release list --repo $1 | grep Latest | cut -f3))
+endef
+
+# usage: get-latest-quay-tag NAME
+define get-latest-quay-tag
+	$(eval latest_tag := $(shell wget -O - https://quay.io/api/v1/repository/cybozu/$1/tag/ | jq -r '.tags[] | .name' | awk '/.*\..*\./ {print $$1; exit}'))
+endef
+
+# usage: get-release-hash OWNER/REPO VERSION
+# do not indent because it appears on output
+define get-release-hash
+$(shell TEMP_DIR=$$(mktemp -d); \
+git clone https://github.com/$1.git $${TEMP_DIR}; \
+cd $${TEMP_DIR}; \
+git rev-parse $2; \
+rm -rf $${TEMP_DIR})
+endef
+
+# usage: upstream-tag 1.2.3.4
+# do not indent because it appears on output
+define upstream-tag
+$(shell echo $1 | sed -E 's/^(.*)\.[[:digit:]]+$$/v\1/')
+endef
+
+# usage: update-version OWNER/REPO VAR MAJOR
+define update-version
+	$(call get-latest-gh,$1)
+	NEW_VERSION=$$(echo $(latest_gh) | if [ -z "$3" ]; then cut -b 2-; else cut -b 2; fi); \
+	sed -i -e "s/^$2 := .*/$2 := $${NEW_VERSION}/g" Makefile.versions
+endef
+
+# usage: update-version-quay NAME VAR
+define update-version-quay
+	$(call get-latest-quay-tag,$1)
+	NEW_VERSION=$$(echo $(call upstream-tag,$(latest_tag)) | cut -b 2-); \
+	sed -i -e "s/$2 := .*/$2 := $${NEW_VERSION}/g" Makefile.versions
+endef
+
+# usage: update-hash OWNER/REPO VAR
+# this function must be called immediate after update-version
+define update-hash
+	NEW_HASH=$(call get-release-hash,$1,$(latest_gh)); \
+	sed -i -e "s/$2 := .*/$2 := $${NEW_HASH}/g" Makefile.versions
+endef
+
+# usage: update-trusted-action OWNER/REPO VERSION
+define update-trusted-action
+	for i in $(shell ls $(WORKFLOWS_DIR)); do \
+		$(YQ) -i '(.. | select(has("uses")) | select(.uses | contains("$1"))).uses = "$1@v$2"' $(WORKFLOWS_DIR)/$$i; \
+	done
+endef
+
+# usage: update-normal-action OWNER/REPO VERSION HASH
+define update-normal-action
+	for i in $(shell ls $(WORKFLOWS_DIR)); do \
+		$(YQ) -i '(.. | select(has("uses")) | select(.uses | contains("$1"))).uses = "$1@$3"' $(WORKFLOWS_DIR)/$$i; \
+		$(YQ) -i '(.. | select(has("uses")) | select(.uses | contains("$1"))).uses line_comment="$2"' $(WORKFLOWS_DIR)/$$i; \
+	done
+endef
+
+# usage: update-goreleaser VERSION
+define update-goreleaser
+	for i in $(shell ls $(WORKFLOWS_DIR)); do \
+		$(YQ) -i '(.. | select(has("uses")) | select(.uses | contains("goreleaser/goreleaser-action"))).with.version = "v$1"'  $(WORKFLOWS_DIR)/$$i; \
+	done
+endef
+
+# usage: update-helm VERSION
+define update-helm
+	for i in $(shell ls $(WORKFLOWS_DIR)); do \
+		$(YQ) -i '(.. | select(has("uses")) | select(.uses | contains("azure/setup-helm"))).with.version = "v$1"'  $(WORKFLOWS_DIR)/$$i; \
+	done
+endef
+
+# usage: update-kind VERSION
+define update-kind
+	for i in $(shell ls $(WORKFLOWS_DIR)); do \
+		$(YQ) -i '(.. | select(has("uses")) | select(.uses | contains("helm/kind-action"))).with.version = "v$1"'  $(WORKFLOWS_DIR)/$$i; \
+	done
+endef

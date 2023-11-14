@@ -1,24 +1,20 @@
 name: Release Charts
-
 on:
   push:
     tags:
       - 'chart-v*'
-
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Set up Helm
         uses: azure/setup-helm@v3
         with:
-          version: v3.10.0
-
+          version: v3.11.3
       - name: Check chart version
         run: |
           tag_version=${GITHUB_REF##*/chart-v}
@@ -29,36 +25,29 @@ jobs:
           fi
       - name: Packaging the chart
         run: helm package ./charts/tenet/
-
       - uses: actions/upload-artifact@v3
         with:
           name: helm-charts
           path: ./tenet-*.tgz
           retention-days: 1
-
   publish:
     name: Publish charts on GitHub Pages
     runs-on: ubuntu-22.04
     needs: build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: gh-pages
-
       - name: Set up Helm
         uses: azure/setup-helm@v3
         with:
-          version: v3.10.0
-
+          version: v3.11.3
       - uses: actions/download-artifact@v3
         with:
           name: helm-charts
-
       - name: Update charts index
         run: helm repo index --url https://cybozu-go.github.io/tenet/ --merge index.yaml .
-
       - run: git add .
-
       - name: Check diffs
         run: |
           diffs=$(git status -s)

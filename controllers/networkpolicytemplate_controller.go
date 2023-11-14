@@ -38,7 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	tenetv1beta2 "github.com/cybozu-go/tenet/api/v1beta2"
 	"github.com/cybozu-go/tenet/pkg/cilium"
@@ -270,8 +269,7 @@ func (r *NetworkPolicyTemplateReconciler) SetupWithManager(ctx context.Context, 
 		}
 		return nil
 	}
-	listNPTs := func(_ client.Object) []reconcile.Request {
-		ctx := context.Background()
+	listNPTs := func(ctx context.Context, _ client.Object) []reconcile.Request {
 		var nptl tenetv1beta2.NetworkPolicyTemplateList
 		if err := r.List(ctx, &nptl); err != nil {
 			r.Log.Error(err, "failed to list NetworkPolicyTemplates")
@@ -287,24 +285,24 @@ func (r *NetworkPolicyTemplateReconciler) SetupWithManager(ctx context.Context, 
 		return requests
 	}
 
-	filterCNP := func(o client.Object) []reconcile.Request {
+	filterCNP := func(ctx context.Context, o client.Object) []reconcile.Request {
 		if getOwner(o, cilium.CiliumNetworkPolicy()) == nil {
 			return nil
 		}
-		return listNPTs(o)
+		return listNPTs(ctx, o)
 	}
 
-	filterCCNP := func(o client.Object) []reconcile.Request {
+	filterCCNP := func(ctx context.Context, o client.Object) []reconcile.Request {
 		if getOwner(o, cilium.CiliumClusterwideNetworkPolicy()) == nil {
 			return nil
 		}
-		return listNPTs(o)
+		return listNPTs(ctx, o)
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&tenetv1beta2.NetworkPolicyTemplate{}).
-		Watches(&source.Kind{Type: &corev1.Namespace{}}, handler.EnqueueRequestsFromMapFunc(listNPTs)).
-		Watches(&source.Kind{Type: cilium.CiliumNetworkPolicy()}, handler.EnqueueRequestsFromMapFunc(filterCNP)).
-		Watches(&source.Kind{Type: cilium.CiliumClusterwideNetworkPolicy()}, handler.EnqueueRequestsFromMapFunc(filterCCNP)).
+		Watches(&corev1.Namespace{}, handler.EnqueueRequestsFromMapFunc(listNPTs)).
+		Watches(cilium.CiliumNetworkPolicy(), handler.EnqueueRequestsFromMapFunc(filterCNP)).
+		Watches(cilium.CiliumClusterwideNetworkPolicy(), handler.EnqueueRequestsFromMapFunc(filterCCNP)).
 		Complete(r)
 }

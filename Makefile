@@ -189,13 +189,13 @@ version: login-gh update-kustomize-version ## Update dependent versions
 	$(call update-version,kubernetes-sigs/kind,KIND_VERSION)
 	$(call update-version,rust-lang/mdBook,MDBOOK_VERSION)
 
-	$(call update-version-quay,cert-manager,CERT_MANAGER_VERSION)
-	$(call update-version-quay,cilium,CILIUM_VERSION)
+	$(call update-version-ghcr,cert-manager,CERT_MANAGER_VERSION)
+	$(call update-version-ghcr,cilium,CILIUM_VERSION)
 
 .PHONY: update-kustomize-version
 update-kustomize-version:
-	$(call get-latest-quay-tag,argocd)
-	NEW_VERSION=$$(docker run quay.io/cybozu/argocd:$(latest_tag) kustomize version | cut -c2-); \
+	$(call get-latest-gh-package-tag,argocd)
+	NEW_VERSION=$$(docker run ghcr.io/cybozu/argocd:$(latest_tag) kustomize version | cut -c2-); \
 	sed -i -e "s/KUSTOMIZE_VERSION := .*/KUSTOMIZE_VERSION := $${NEW_VERSION}/g" Makefile.versions
 
 .PHONY: update-actions
@@ -272,9 +272,9 @@ define get-latest-gh
 	$(eval latest_gh := $(shell $(GH) release list --repo $1 | grep Latest | cut -f3))
 endef
 
-# usage: get-latest-quay-tag NAME
-define get-latest-quay-tag
-	$(eval latest_tag := $(shell wget -O - https://quay.io/api/v1/repository/cybozu/$1/tag/ | jq -r '.tags[] | .name' | awk '/.*\..*\./ {print $$1; exit}'))
+# usage: get-latest-gh-package-tag NAME
+define get-latest-gh-package-tag
+$(eval latest_tag := $(shell curl -sSf -H "Authorization: Bearer $(shell curl -sSf "https://ghcr.io/token?scope=repository%3Acybozu%2F$1%3Apull&service=ghcr.io" | jq -r .token)" https://ghcr.io/v2/cybozu/$1/tags/list | jq -r '.tags[]' | sort -Vr | head -n 1))
 endef
 
 # usage: get-release-hash OWNER/REPO VERSION
@@ -300,9 +300,9 @@ define update-version
 	sed -i -e "s/^$2 := .*/$2 := $${NEW_VERSION}/g" Makefile.versions
 endef
 
-# usage: update-version-quay NAME VAR
-define update-version-quay
-	$(call get-latest-quay-tag,$1)
+# usage: update-version-ghcr NAME VAR
+define update-version-ghcr
+	$(call get-latest-gh-package-tag,$1)
 	NEW_VERSION=$$(echo $(call upstream-tag,$(latest_tag)) | cut -b 2-); \
 	sed -i -e "s/$2 := .*/$2 := $${NEW_VERSION}/g" Makefile.versions
 endef

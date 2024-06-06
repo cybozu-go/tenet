@@ -264,7 +264,7 @@ container-structure-test: $(CONTAINER_STRUCTURE_TEST)
 
 $(CONTAINER_STRUCTURE_TEST):
 	mkdir -p $(BIN_DIR)
-	curl -fsL -o $(CONTAINER_STRUCTURE_TEST) https://storage.googleapis.com/container-structure-test/v$(CST_VERSION)/container-structure-test-linux-amd64
+	curl -fsL -o $(CONTAINER_STRUCTURE_TEST) https://github.com/GoogleContainerTools/container-structure-test/releases/download/v$(CST_VERSION)/container-structure-test-linux-amd64
 	chmod +x $(CONTAINER_STRUCTURE_TEST)
 
 # usage: get-latest-gh OWNER/REPO

@@ -58,7 +58,7 @@ jobs:
     name: End-to-End Tests
     strategy:
       matrix:
-        k8s-version: ["1.27.3", "1.28.0", "1.29.1"]
+        k8s-version: ["1.27.13", "1.28.9", "1.29.4"]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4

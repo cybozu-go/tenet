@@ -204,14 +204,14 @@ It should look like:</p>
 <ol>
 <li>
 <p>Determine a new version number. Then set <code>VERSION</code> variable.</p>
-<pre><code class="language-console"># Set VERSION and confirm it. It should not have &quot;v&quot; prefix.
+<pre><code class="language-console"># Set VERSION and confirm it. It should not have "v" prefix.
 $ VERSION=x.y.z
 $ echo $VERSION
 </code></pre>
 </li>
 <li>
 <p>Make a branch to release</p>
-<pre><code class="language-console">$ git neco dev &quot;bump-$VERSION&quot;
+<pre><code class="language-console">$ git neco dev "bump-$VERSION"
 </code></pre>
 </li>
 <li>
@@ -219,7 +219,7 @@ $ echo $VERSION
 </li>
 <li>
 <p>Commit the change and push it.</p>
-<pre><code class="language-console">$ git commit -a -m &quot;Bump version to $VERSION&quot;
+<pre><code class="language-console">$ git commit -a -m "Bump version to $VERSION"
 $ git neco review
 </code></pre>
 </li>
@@ -234,12 +234,12 @@ $ echo $VERSION
 
 $ git checkout main
 $ git pull
-$ git tag -a -m &quot;Release v$VERSION&quot; &quot;v$VERSION&quot;
+$ git tag -a -m "Release v$VERSION" "v$VERSION"
 
 # Make sure the release tag exists.
 $ git tag -ln | grep $VERSION
 
-$ git push origin &quot;v$VERSION&quot;
+$ git push origin "v$VERSION"
 </code></pre>
 </li>
 </ol>

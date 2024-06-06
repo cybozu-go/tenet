@@ -197,7 +197,7 @@ spec:
         egress:
         - toEndpoints:
           - matchLabels:
-              &quot;k8s:io.kubernetes.pod.namespace&quot;: {{.Name}}
+              "k8s:io.kubernetes.pod.namespace": {{.Name}}
 </code></pre>
 <p>When a tenant namespace is annotated like below,</p>
 <pre><code class="language-yaml"># namespace.yaml
@@ -221,7 +221,7 @@ spec:
   egress:
   - toEndpoints:
     - matchLabels:
-         &quot;k8s:io.kubernetes.pod.namespace&quot;: my-namespace
+         "k8s:io.kubernetes.pod.namespace": my-namespace
 </code></pre>
 <p>If <code>my-namespace</code> is an Accurate root namespace, any of its child namespace will inherit the <code>tenet.cybozu.io/network-policy-template</code> annotation and CiliumNetworkPolicies will be created with the templates filled-in.</p>
 <p>To write <code>CiliumClusterwideNetworkPolicy</code> templates, set <code>.spec.clusterwide: true</code> on <code>NetworkPolicyTemplate</code>.</p>

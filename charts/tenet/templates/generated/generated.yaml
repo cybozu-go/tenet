@@ -95,6 +95,13 @@ rules:
 - apiGroups:
   - tenet.cybozu.io
   resources:
+  - networkpolicyadmissionrules
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
   - networkpolicytemplates
   verbs:
   - create
@@ -185,24 +192,6 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: '{{ template "tenet.fullname" . }}-leader-election-role'
-subjects:
-- kind: ServiceAccount
-  name: '{{ template "tenet.fullname" . }}-controller-manager'
-  namespace: '{{ .Release.Namespace }}'
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
-    app.kubernetes.io/name: '{{ include "tenet.name" . }}'
-    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
-    helm.sh/chart: '{{ include "tenet.chart" . }}'
-  name: '{{ template "tenet.fullname" . }}-manager-admin'
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: admin
 subjects:
 - kind: ServiceAccount
   name: '{{ template "tenet.fullname" . }}-controller-manager'

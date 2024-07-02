@@ -58,6 +58,7 @@ type NetworkPolicyTemplateReconciler struct {
 //+kubebuilder:rbac:groups=tenet.cybozu.io,resources=networkpolicytemplates,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=tenet.cybozu.io,resources=networkpolicytemplates/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=tenet.cybozu.io,resources=networkpolicytemplates/finalizers,verbs=update
+// +kubebuilder:rbac:groups=tenet.cybozu.io,resources=networkpolicyadmissionrules,verbs=get;list
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups="cilium.io",resources=ciliumnetworkpolicies,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups="cilium.io",resources=ciliumclusterwidenetworkpolicies,verbs=get;list;watch;create;update;delete

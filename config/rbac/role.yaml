@@ -37,6 +37,13 @@ rules:
 - apiGroups:
   - tenet.cybozu.io
   resources:
+  - networkpolicyadmissionrules
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - tenet.cybozu.io
+  resources:
   - networkpolicytemplates
   verbs:
   - create

@@ -41,7 +41,7 @@ jobs:
           go-version-file: go.mod
       - uses: goreleaser/goreleaser-action@v6.0.0
         with:
-          version: v2.0.0
+          version: v2.2.0
           args: check -f .goreleaser.yml
   test:
     name: Test
@@ -58,7 +58,7 @@ jobs:
     name: End-to-End Tests
     strategy:
       matrix:
-        k8s-version: ["1.27.13", "1.28.9", "1.29.4"]
+        k8s-version: ["1.29.8", "1.30.4", "1.31.0"]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +97,7 @@ jobs:
       - name: GoReleaser
         uses: goreleaser/goreleaser-action@v6.0.0
         with:
-          version: v2.0.0
+          version: v2.2.0
           args: --snapshot --skip publish --clean
       - name: Test built containers
         run: make container-structure-test

@@ -20,7 +20,7 @@ import (
 
 type ciliumNetworkPolicyValidator struct {
 	client.Client
-	dec                *admission.Decoder
+	dec                admission.Decoder
 	serviceAccountName string
 }
 
@@ -146,7 +146,7 @@ func (v *ciliumNetworkPolicyValidator) shouldValidate(ns *corev1.Namespace, npar
 	return true
 }
 
-func SetupCiliumNetworkPolicyWebhook(mgr manager.Manager, dec *admission.Decoder, sa string) {
+func SetupCiliumNetworkPolicyWebhook(mgr manager.Manager, dec admission.Decoder, sa string) {
 	v := &ciliumNetworkPolicyValidator{
 		Client:             mgr.GetClient(),
 		dec:                dec,

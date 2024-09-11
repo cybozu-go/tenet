@@ -17,7 +17,7 @@ import (
 
 type networkPolicyAdmissionRuleValidator struct {
 	client.Client
-	dec *admission.Decoder
+	dec admission.Decoder
 }
 
 var _ admission.Handler = &networkPolicyAdmissionRuleValidator{}
@@ -39,7 +39,7 @@ func (v *networkPolicyAdmissionRuleValidator) Handle(ctx context.Context, req ad
 	return admission.Allowed("")
 }
 
-func SetupNetworkPolicyAdmissionRuleWebhook(mgr manager.Manager, dec *admission.Decoder) {
+func SetupNetworkPolicyAdmissionRuleWebhook(mgr manager.Manager, dec admission.Decoder) {
 	v := &networkPolicyAdmissionRuleValidator{
 		Client: mgr.GetClient(),
 		dec:    dec,

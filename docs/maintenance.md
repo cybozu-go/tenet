@@ -19,3 +19,4 @@ This page describes how to update tenet regularly.
    $ make maintenance
    ```
 9. Follow [release.md](/docs/release.md) to update software version.
+10. If you are willing to release Helm Chart, follow [charts/tenet/README.md](/charts/tenet/README.md) to update chart version.

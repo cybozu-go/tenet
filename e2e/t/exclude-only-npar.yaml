@@ -1,0 +1,8 @@
+apiVersion: tenet.cybozu.io/v1beta2
+kind: NetworkPolicyAdmissionRule
+metadata:
+    name: exclude-only-npar
+spec:
+    namespaceSelector:
+      excludeLabels:
+        team: tenant

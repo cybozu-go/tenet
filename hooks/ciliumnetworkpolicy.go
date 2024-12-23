@@ -73,25 +73,21 @@ func (v *ciliumNetworkPolicyValidator) handleCreateOrUpdate(ctx context.Context,
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	if !v.shouldValidate(ns, &nparl) {
-		return admission.Allowed("")
-	}
-
-	res = v.validateIP(nparl, cnp)
+	res = v.validateIP(nparl, cnp, ns.Labels)
 	if !res.Allowed {
 		return res
 	}
 
-	return v.validateEntity(nparl, cnp)
+	return v.validateEntity(nparl, cnp, ns.Labels)
 }
 
-func (v *ciliumNetworkPolicyValidator) validateIP(nparl tenetv1beta2.NetworkPolicyAdmissionRuleList, cnp *unstructured.Unstructured) admission.Response {
+func (v *ciliumNetworkPolicyValidator) validateIP(nparl tenetv1beta2.NetworkPolicyAdmissionRuleList, cnp *unstructured.Unstructured, ls map[string]string) admission.Response {
 	egressPolicies, ingressPolicies, err := v.gatherIPPolicies(cnp)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	egressFilters, ingressFilters, err := v.gatherIPFilters(&nparl)
+	egressFilters, ingressFilters, err := v.gatherIPFilters(&nparl, ls)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
@@ -112,12 +108,12 @@ func (v *ciliumNetworkPolicyValidator) validateIP(nparl tenetv1beta2.NetworkPoli
 	return admission.Allowed("")
 }
 
-func (v *ciliumNetworkPolicyValidator) validateEntity(nparl tenetv1beta2.NetworkPolicyAdmissionRuleList, cnp *unstructured.Unstructured) admission.Response {
+func (v *ciliumNetworkPolicyValidator) validateEntity(nparl tenetv1beta2.NetworkPolicyAdmissionRuleList, cnp *unstructured.Unstructured, ls map[string]string) admission.Response {
 	egressPolicies, ingressPolicies, err := v.gatherEntityPolicies(cnp)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-	egressFilters, ingressFilters := v.gatherEntityFilters(&nparl)
+	egressFilters, ingressFilters := v.gatherEntityFilters(&nparl, ls)
 	for _, egressPolicy := range egressPolicies {
 		for _, egressFilter := range egressFilters {
 			if egressPolicy == egressFilter {
@@ -135,12 +131,10 @@ func (v *ciliumNetworkPolicyValidator) validateEntity(nparl tenetv1beta2.Network
 	return admission.Allowed("")
 }
 
-func (v *ciliumNetworkPolicyValidator) shouldValidate(ns *corev1.Namespace, nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList) bool {
-	for _, npar := range nparl.Items {
-		for k, v := range npar.Spec.NamespaceSelector.ExcludeLabels {
-			if ns.Labels[k] == v {
-				return false
-			}
+func (v *ciliumNetworkPolicyValidator) shouldValidate(npar *tenetv1beta2.NetworkPolicyAdmissionRule, ls map[string]string) bool {
+	for k, v := range npar.Spec.NamespaceSelector.ExcludeLabels {
+		if ls[k] == v {
+			return false
 		}
 	}
 	return true

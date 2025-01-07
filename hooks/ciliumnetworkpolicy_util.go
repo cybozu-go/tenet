@@ -54,9 +54,13 @@ func (v *ciliumNetworkPolicyValidator) toIPNetSlice(raw []string) ([]*net.IPNet,
 	return res, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherIPFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList) ([]*net.IPNet, []*net.IPNet, error) {
+func (v *ciliumNetworkPolicyValidator) gatherIPFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList, ls map[string]string) ([]*net.IPNet, []*net.IPNet, error) {
 	var egressFilters, ingressFilters []*net.IPNet
 	for _, npar := range nparl.Items {
+		if !v.shouldValidate(&npar, ls) {
+			continue
+		}
+
 		for _, ipRange := range npar.Spec.ForbiddenIPRanges {
 			_, cidr, err := net.ParseCIDR(ipRange.CIDR)
 			if err != nil {
@@ -80,9 +84,13 @@ func (v *ciliumNetworkPolicyValidator) gatherEntityPolicies(cnp *unstructured.Un
 	return v.gatherPolicies(cnp, cilium.EntityRuleKey, v.gatherPoliciesFromStringRule)
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherEntityFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList) ([]string, []string) {
+func (v *ciliumNetworkPolicyValidator) gatherEntityFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList, ls map[string]string) ([]string, []string) {
 	var egressFilters, ingressFilters []string
 	for _, npar := range nparl.Items {
+		if !v.shouldValidate(&npar, ls) {
+			continue
+		}
+
 		for _, entity := range npar.Spec.ForbiddenEntities {
 			switch entity.Type {
 			case tenetv1beta2.NetworkPolicyAdmissionRuleTypeAll:

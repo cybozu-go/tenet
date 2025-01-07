@@ -57,7 +57,9 @@ func (v *ciliumNetworkPolicyValidator) toIPNetSlice(raw []string) ([]*net.IPNet,
 func (v *ciliumNetworkPolicyValidator) gatherIPFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList, ls map[string]string) ([]*net.IPNet, []*net.IPNet, error) {
 	var egressFilters, ingressFilters []*net.IPNet
 	for _, npar := range nparl.Items {
-		if !v.shouldValidate(&npar, ls) {
+		if matched, err := v.shouldExclude(&npar, ls); err != nil {
+			return nil, nil, err
+		} else if matched {
 			continue
 		}
 
@@ -84,10 +86,12 @@ func (v *ciliumNetworkPolicyValidator) gatherEntityPolicies(cnp *unstructured.Un
 	return v.gatherPolicies(cnp, cilium.EntityRuleKey, v.gatherPoliciesFromStringRule)
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherEntityFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList, ls map[string]string) ([]string, []string) {
+func (v *ciliumNetworkPolicyValidator) gatherEntityFilters(nparl *tenetv1beta2.NetworkPolicyAdmissionRuleList, ls map[string]string) ([]string, []string, error) {
 	var egressFilters, ingressFilters []string
 	for _, npar := range nparl.Items {
-		if !v.shouldValidate(&npar, ls) {
+		if matched, err := v.shouldExclude(&npar, ls); err != nil {
+			return nil, nil, err
+		} else if matched {
 			continue
 		}
 
@@ -103,7 +107,7 @@ func (v *ciliumNetworkPolicyValidator) gatherEntityFilters(nparl *tenetv1beta2.N
 			}
 		}
 	}
-	return egressFilters, ingressFilters
+	return egressFilters, ingressFilters, nil
 }
 
 func (v *ciliumNetworkPolicyValidator) intersectIP(cidr1, cidr2 *net.IPNet) bool {

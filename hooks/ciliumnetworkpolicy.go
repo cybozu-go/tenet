@@ -6,7 +6,9 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -113,7 +115,10 @@ func (v *ciliumNetworkPolicyValidator) validateEntity(nparl tenetv1beta2.Network
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-	egressFilters, ingressFilters := v.gatherEntityFilters(&nparl, ls)
+	egressFilters, ingressFilters, err := v.gatherEntityFilters(&nparl, ls)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
 	for _, egressPolicy := range egressPolicies {
 		for _, egressFilter := range egressFilters {
 			if egressPolicy == egressFilter {
@@ -131,13 +136,15 @@ func (v *ciliumNetworkPolicyValidator) validateEntity(nparl tenetv1beta2.Network
 	return admission.Allowed("")
 }
 
-func (v *ciliumNetworkPolicyValidator) shouldValidate(npar *tenetv1beta2.NetworkPolicyAdmissionRule, ls map[string]string) bool {
-	for k, v := range npar.Spec.NamespaceSelector.ExcludeLabels {
-		if ls[k] == v {
-			return false
-		}
+func (v *ciliumNetworkPolicyValidator) shouldExclude(npar *tenetv1beta2.NetworkPolicyAdmissionRule, ls map[string]string) (bool, error) {
+	s, err := v1.LabelSelectorAsSelector(&v1.LabelSelector{
+		MatchLabels:      npar.Spec.NamespaceSelector.ExcludeLabels,
+		MatchExpressions: npar.Spec.NamespaceSelector.ExcludeLabelExpressions,
+	})
+	if err != nil {
+		return false, err
 	}
-	return true
+	return s.Matches(labels.Set(ls)), nil
 }
 
 func SetupCiliumNetworkPolicyWebhook(mgr manager.Manager, dec admission.Decoder, sa string) {

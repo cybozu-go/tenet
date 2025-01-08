@@ -48,6 +48,9 @@ type NetworkPolicyAdmissionRuleSpec struct {
 type NetworkPolicyAdmissionRuleNamespaceSelector struct {
 	// ExcludeLabels defines labels through which a namespace should be excluded.
 	ExcludeLabels map[string]string `json:"excludeLabels,omitempty"`
+
+	// ExcludeLabelExpressions defines labels through which a namespace should be excluded by some expressions.
+	ExcludeLabelExpressions []metav1.LabelSelectorRequirement `json:"excludeLabelExpressions,omitempty"`
 }
 
 // NetworkPolicyAdmissionRuleForbiddenIPRanges defines forbidden IP ranges.

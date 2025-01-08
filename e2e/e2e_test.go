@@ -35,6 +35,9 @@ var (
 	//go:embed t/node-entity-allow-cnp.yaml
 	nodeEntityAllowCiliumNetworkPolicy []byte
 
+	//go:embed t/world-entity-allow-cnp.yaml
+	worldEntityAllowCiliumNetworkPolicy []byte
+
 	//go:embed t/legal-cnp.yaml
 	legalCiliumNetworkPolicy []byte
 )
@@ -315,6 +318,26 @@ var _ = Describe("NetworkPolicyAdmissionRule", func() {
 		Eventually(func() error {
 			return getCNPInNamespace(dummyPolicyName, nsName)
 		}).Should(Succeed())
+	})
+
+	It("should not accept CiliumNetworkPolicy with forbidden rules except for excluded namespaces using expressions", func() {
+		By("setting up namespace")
+		ns := uuid.NewString()
+		kubectlSafe(nil, "create", "ns", ns)
+		necoNS := uuid.NewString()
+		kubectlSafe(nil, "create", "ns", necoNS)
+		kubectlSafe(nil, "label", "ns", necoNS, "team=neco")
+		tenantNS := uuid.NewString()
+		kubectlSafe(nil, "create", "ns", tenantNS)
+		kubectlSafe(nil, "label", "ns", tenantNS, "team=tenant")
+
+		By("applying world entity CiliumNetworkPolicy which is forbidden in namespaces except for neco")
+		_, err := kubectl(worldEntityAllowCiliumNetworkPolicy, "apply", "-n", ns, "-f", "-")
+		Expect(err).To(HaveOccurred())
+		_, err = kubectl(worldEntityAllowCiliumNetworkPolicy, "apply", "-n", necoNS, "-f", "-")
+		Expect(err).NotTo(HaveOccurred())
+		_, err = kubectl(worldEntityAllowCiliumNetworkPolicy, "apply", "-n", tenantNS, "-f", "-")
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("should not reject a legal CiliumNetworkPolicy", func() {

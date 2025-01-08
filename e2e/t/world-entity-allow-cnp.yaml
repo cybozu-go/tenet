@@ -1,0 +1,9 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+    name: dummy
+spec:
+  endpointSelector: {}
+  egress:
+  - toEntities:
+    - world

@@ -21,6 +21,7 @@ limitations under the License.
 package v1beta2
 
 import (
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -120,6 +121,13 @@ func (in *NetworkPolicyAdmissionRuleNamespaceSelector) DeepCopyInto(out *Network
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
+		}
+	}
+	if in.ExcludeLabelExpressions != nil {
+		in, out := &in.ExcludeLabelExpressions, &out.ExcludeLabelExpressions
+		*out = make([]v1.LabelSelectorRequirement, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 }

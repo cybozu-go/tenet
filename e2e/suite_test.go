@@ -27,6 +27,9 @@ var (
 
 	//go:embed t/exclude-only-npar.yaml
 	excludeOnlyNetworkPolicyAdmissionRule []byte
+
+	//go:embed t/exclude-expressions-npar.yaml
+	excludeExpressionsNetworkPolicyAdmissionRule []byte
 )
 
 func TestE2E(t *testing.T) {
@@ -51,4 +54,5 @@ var _ = BeforeSuite(func() {
 	kubectlSafe(bmcDenyNetworkPolicyAdmissionRule, "apply", "-f", "-")
 	kubectlSafe(nodeDenyNetworkPolicyAdmissionRule, "apply", "-f", "-")
 	kubectlSafe(excludeOnlyNetworkPolicyAdmissionRule, "apply", "-f", "-")
+	kubectlSafe(excludeExpressionsNetworkPolicyAdmissionRule, "apply", "-f", "-")
 })

@@ -1,0 +1,15 @@
+apiVersion: tenet.cybozu.io/v1beta2
+kind: NetworkPolicyAdmissionRule
+metadata:
+    name: exclude-only-npar
+spec:
+    namespaceSelector:
+      excludeLabelExpressions:
+      - key: team
+        operator: In
+        values:
+        - neco
+        - tenant
+    forbiddenEntities:
+    - entity: world
+      type: all

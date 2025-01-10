@@ -40,20 +40,23 @@ It should look like:
 
 2. Make a branch to release
 
-    ```console
-    $ git neco dev "bump-$VERSION"
-    ```
+   ```console
+   $ git switch main
+   $ git pull origin main
+   $ git switch -c "bump-$VERSION"
+   ```
 
-3. Edit `CHANGELOG.md` for the new version ([example][]).
-4. Commit the change and push it.
+3. Edit `CHANGELOG.md` for the new version ([example_changelog][]).
+4. Edit `charts/tenet/Chart.yaml` for the new version ([example_chart][]).
+5. Commit the change and push it.
 
     ```console
     $ git commit -a -m "Bump version to $VERSION"
-    $ git neco review
+    $ gh pr create --fill --assignee @me
     ```
 
-5. Merge this branch.
-6. Add a git tag to the main HEAD, then push it.
+6. Merge this branch.
+7. Add a git tag to the main HEAD, then push it.
 
     ```console
     # Set VERSION again.
@@ -74,4 +77,5 @@ GitHub actions will build and push artifacts such as container images and
 create a new GitHub release.
 
 [semver]: https://semver.org/spec/v2.0.0.html
-[example]: https://github.com/cybozu-go/etcdpasswd/commit/77d95384ac6c97e7f48281eaf23cb94f68867f79
+[example_changelog]: https://github.com/cybozu-go/etcdpasswd/commit/77d95384ac6c97e7f48281eaf23cb94f68867f79
+[example_chart]: https://github.com/cybozu-go/tenet/pull/44/files

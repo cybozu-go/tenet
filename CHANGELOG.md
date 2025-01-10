@@ -5,6 +5,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-01-10
+### Changed
+- Make excludeLabels only affects to the same NetworkPolicyAdmissionRule (#46)
+
+### Added
+- Add excludeLabelExpressions (#48)
+
 ## [0.9.0] - 2024-09-11
 ### Changed
 - Remove tenet-manager-admin ClusterRoleBinding (#41)

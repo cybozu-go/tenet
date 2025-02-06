@@ -14,7 +14,7 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
-          version: v3.15.4
+          version: v3.17.0
       - name: Check chart version
         run: |
           tag_version=${GITHUB_REF##*/chart-v}
@@ -41,7 +41,7 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
-          version: v3.15.4
+          version: v3.17.0
       - uses: actions/download-artifact@v4
         with:
           name: helm-charts

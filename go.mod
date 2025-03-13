@@ -1,7 +1,8 @@
 module github.com/cybozu-go/tenet
 
-go 1.23
-toolchain go1.23.4
+go 1.23.0
+
+toolchain go1.23.7
 
 require (
 	github.com/go-logr/logr v1.4.2

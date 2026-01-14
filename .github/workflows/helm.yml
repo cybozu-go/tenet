@@ -6,15 +6,15 @@ on:
       - '!**.md'
 jobs:
   lint-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@cf48dbf901ed202ae2c5aee26422dd6dfdf41e47 # 2.7.0
+        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # 2.8.0
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
@@ -25,11 +25,11 @@ jobs:
       - name: Run chart-testing (lint)
         run: ct lint --config ct.yaml
       - name: Create kind cluster
-        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # 1.12.0
+        uses: helm/kind-action@92086f6be054225fa813e0a4b13787fc9088faab # 1.13.0
         if: steps.list-changed.outputs.changed == 'true'
         with:
-          node_image: kindest/node:v1.27.3
-          version: v0.29.0
+          node_image: kindest/node:v1.33.7
+          version: v0.31.0
       - name: Apply cert-manager
         run: |
           kubectl apply -f https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml

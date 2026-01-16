@@ -7,26 +7,26 @@ on:
 jobs:
   build:
     name: Build book
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: make book
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: book
           path: docs/book
           retention-days: 1
   publish:
     name: Publish book on GitHub Pages
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: gh-pages
       # do not remove helm chart related files if present
       - run: ls | grep -v -E "index.yaml|.*\.tgz" | xargs rm -rf
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: book
       - run: git add .

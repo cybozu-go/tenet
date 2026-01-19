@@ -47,16 +47,15 @@ It should look like:
    ```
 
 3. Edit `CHANGELOG.md` for the new version ([example_changelog][]).
-4. Edit `charts/tenet/Chart.yaml` for the new version ([example_chart][]).
-5. Commit the change and push it.
+4. Commit the change and push it.
 
     ```console
     $ git commit -a -m "Bump version to $VERSION"
     $ gh pr create --fill --assignee @me
     ```
 
-6. Merge this branch.
-7. Add a git tag to the main HEAD, then push it.
+5. Merge this branch.
+6. Add a git tag to the main HEAD, then push it.
 
     ```console
     # Set VERSION again.
@@ -78,4 +77,3 @@ create a new GitHub release.
 
 [semver]: https://semver.org/spec/v2.0.0.html
 [example_changelog]: https://github.com/cybozu-go/etcdpasswd/commit/77d95384ac6c97e7f48281eaf23cb94f68867f79
-[example_chart]: https://github.com/cybozu-go/tenet/pull/44/files

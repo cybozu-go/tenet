@@ -28,7 +28,7 @@ jobs:
         uses: helm/kind-action@92086f6be054225fa813e0a4b13787fc9088faab # 1.13.0
         if: steps.list-changed.outputs.changed == 'true'
         with:
-          node_image: kindest/node:v1.33.7
+          node_image: kindest/node:v1.34.3
           version: v0.31.0
       - name: Apply cert-manager
         run: |

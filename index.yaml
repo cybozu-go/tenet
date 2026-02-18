@@ -2,8 +2,19 @@ apiVersion: v1
 entries:
   tenet:
   - apiVersion: v2
+    appVersion: 0.13.0
+    created: "2026-02-18T05:06:41.857320965Z"
+    description: Tenet is a Kubernetes controller that aims to facilitate setting-up
+      Network Policies on tenant namespaces.
+    digest: 0f6098091fcf0742b1b2172220f14fb3f44f8b12da8748a6f137d4c00da87df3
+    name: tenet
+    type: application
+    urls:
+    - https://cybozu-go.github.io/tenet/tenet-0.13.0.tgz
+    version: 0.13.0
+  - apiVersion: v2
     appVersion: 0.11.0
-    created: "2025-06-05T02:33:06.652978358Z"
+    created: "2026-02-18T05:06:41.857010535Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: f9ce58cf7d48b9ba1641a9c3b79fd52e9a88b65edab752234118851599dbb46f
@@ -14,7 +25,7 @@ entries:
     version: 0.11.0
   - apiVersion: v2
     appVersion: 0.10.1
-    created: "2025-06-05T02:33:06.652662016Z"
+    created: "2026-02-18T05:06:41.856635815Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: 6d41186f84c3058853beb8ac4b1137cf5ba57fe05e4392555e108674043c6a00
@@ -25,7 +36,7 @@ entries:
     version: 0.10.1
   - apiVersion: v2
     appVersion: 0.10.0
-    created: "2025-06-05T02:33:06.652345483Z"
+    created: "2026-02-18T05:06:41.856281513Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: 1dbe75ea5d3d6514d2e83edd698ca7adebccef39b6fb86c30edce57073d67132
@@ -36,7 +47,7 @@ entries:
     version: 0.10.0
   - apiVersion: v2
     appVersion: 0.9.0
-    created: "2025-06-05T02:33:06.655252431Z"
+    created: "2026-02-18T05:06:41.859785109Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: 6d4f6051c35d2930b74778f5b1bdb9f3eb6c09437a38f58932d8bf4c58df3788
@@ -47,7 +58,7 @@ entries:
     version: 0.9.0
   - apiVersion: v2
     appVersion: 0.7.0
-    created: "2025-06-05T02:33:06.654570169Z"
+    created: "2026-02-18T05:06:41.859062318Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: 605ba73633a20a656d0be268fcd53b199dc763eba6fee56fcdd78cf8eeb160f9
@@ -58,7 +69,7 @@ entries:
     version: 0.7.0
   - apiVersion: v2
     appVersion: 0.6.0
-    created: "2025-06-05T02:33:06.654329017Z"
+    created: "2026-02-18T05:06:41.858793245Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: 31ad54f50854768a08b5b81dcad75458639aa77a4d0ba06d633c0d50d464ad61
@@ -69,7 +80,7 @@ entries:
     version: 0.6.0
   - apiVersion: v2
     appVersion: 0.5.0
-    created: "2025-06-05T02:33:06.654081815Z"
+    created: "2026-02-18T05:06:41.858509656Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: 4f94e7966934114b66927efcb140d1dadfa465099a550fa485820a2ff6f8a1dd
@@ -80,7 +91,7 @@ entries:
     version: 0.5.0
   - apiVersion: v2
     appVersion: 0.4.1
-    created: "2025-06-05T02:33:06.653810897Z"
+    created: "2026-02-18T05:06:41.858214564Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: ab47a4a59c321d2dc3567746016e8ac2badc4baa5d0b2dfe8c69c678bda3ff1e
@@ -91,7 +102,7 @@ entries:
     version: 0.4.1
   - apiVersion: v2
     appVersion: 0.3.0
-    created: "2025-06-05T02:33:06.653539288Z"
+    created: "2026-02-18T05:06:41.857944921Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: 97a00c1cdd85ec1e86760a95b590975d34bd2ff36faf57a6e59256d00bd45690
@@ -102,7 +113,7 @@ entries:
     version: 0.3.0
   - apiVersion: v2
     appVersion: 0.2.0
-    created: "2025-06-05T02:33:06.653243154Z"
+    created: "2026-02-18T05:06:41.857618701Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: 36c4dd48f4649dccd275a6d319c9278521041ef225ae1c501265d9ed682e1a28
@@ -113,7 +124,7 @@ entries:
     version: 0.2.0
   - apiVersion: v2
     appVersion: 0.1.0
-    created: "2025-06-05T02:33:06.652058716Z"
+    created: "2026-02-18T05:06:41.855939735Z"
     description: Tenet is a Kubernetes controller that aims to facilitate setting-up
       Network Policies on tenant namespaces.
     digest: 28b0072e770cfb99c9f08cc08b934f2e56bf0f48fc8a3452e14fe042b8b3f969
@@ -122,4 +133,4 @@ entries:
     urls:
     - https://cybozu-go.github.io/tenet/tenet-0.1.2.tgz
     version: 0.1.2
-generated: "2025-06-05T02:33:06.651585169Z"
+generated: "2026-02-18T05:06:41.855526262Z"

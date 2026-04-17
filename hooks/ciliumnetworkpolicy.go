@@ -3,6 +3,7 @@ package hooks
 import (
 	"context"
 	"net/http"
+	"slices"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -120,17 +121,13 @@ func (v *ciliumNetworkPolicyValidator) validateEntity(nparl tenetv1beta2.Network
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 	for _, egressPolicy := range egressPolicies {
-		for _, egressFilter := range egressFilters {
-			if egressPolicy == egressFilter {
-				return admission.Denied("an egress policy is requesting a forbidden entity")
-			}
+		if slices.Contains(egressFilters, egressPolicy) {
+			return admission.Denied("an egress policy is requesting a forbidden entity")
 		}
 	}
 	for _, ingressPolicy := range ingressPolicies {
-		for _, ingressFilter := range ingressFilters {
-			if ingressPolicy == ingressFilter {
-				return admission.Denied("an ingress policy is requesting a forbidden entity")
-			}
+		if slices.Contains(ingressFilters, ingressPolicy) {
+			return admission.Denied("an ingress policy is requesting a forbidden entity")
 		}
 	}
 	return admission.Allowed("")

@@ -17,7 +17,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
@@ -125,7 +124,7 @@ var _ = Describe("Tenet controller", func() {
 				},
 			},
 			Controller: config.Controller{
-				SkipNameValidation: ptr.To(true),
+				SkipNameValidation: new(true),
 			},
 		})
 		Expect(err).NotTo(HaveOccurred())

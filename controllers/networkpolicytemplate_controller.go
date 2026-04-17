@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -209,12 +210,7 @@ func (r *NetworkPolicyTemplateReconciler) reconcileNetworkPolicy(ctx context.Con
 }
 
 func (r *NetworkPolicyTemplateReconciler) isOptedIntoTemplate(npt *tenetv1beta2.NetworkPolicyTemplate, ns corev1.Namespace) bool {
-	for _, a := range strings.Split(ns.Annotations[tenet.PolicyAnnotation], ",") {
-		if a == npt.Name {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(strings.Split(ns.Annotations[tenet.PolicyAnnotation], ","), npt.Name)
 }
 
 func (r *NetworkPolicyTemplateReconciler) compileTemplate(npt *tenetv1beta2.NetworkPolicyTemplate, ns corev1.Namespace) (*unstructured.Unstructured, error) {

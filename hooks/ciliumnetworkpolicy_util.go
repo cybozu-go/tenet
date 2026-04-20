@@ -114,8 +114,8 @@ func (v *ciliumNetworkPolicyValidator) intersectIP(cidr1, cidr2 *net.IPNet) bool
 	return cidr1.Contains(cidr2.IP) || cidr2.Contains(cidr1.IP)
 }
 
-func (v *ciliumNetworkPolicyValidator) getRulesFromSpec(cnp *unstructured.Unstructured) ([]map[string]interface{}, error) {
-	var rules []map[string]interface{}
+func (v *ciliumNetworkPolicyValidator) getRulesFromSpec(cnp *unstructured.Unstructured) ([]map[string]any, error) {
+	var rules []map[string]any
 	cnpSpec, found, _ := unstructured.NestedMap(cnp.UnstructuredContent(), "spec")
 	if found {
 		rules = append(rules, cnpSpec)
@@ -123,7 +123,7 @@ func (v *ciliumNetworkPolicyValidator) getRulesFromSpec(cnp *unstructured.Unstru
 	cnpSpecs, found, _ := unstructured.NestedSlice(cnp.UnstructuredContent(), "specs")
 	if found {
 		for _, cnpSpec := range cnpSpecs {
-			rule, ok := cnpSpec.(map[string]interface{})
+			rule, ok := cnpSpec.(map[string]any)
 			if !ok {
 				return nil, fmt.Errorf("unexpected spec format")
 			}
@@ -133,7 +133,7 @@ func (v *ciliumNetworkPolicyValidator) getRulesFromSpec(cnp *unstructured.Unstru
 	return rules, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPolicies(cnp *unstructured.Unstructured, ruleKey cilium.RuleKey, gatherFunc func(interface{}) ([]string, error)) ([]string, []string, error) {
+func (v *ciliumNetworkPolicyValidator) gatherPolicies(cnp *unstructured.Unstructured, ruleKey cilium.RuleKey, gatherFunc func(any) ([]string, error)) ([]string, []string, error) {
 	var egressPolicies, ingressPolicies []string
 	rules, err := v.getRulesFromSpec(cnp)
 	if err != nil {
@@ -150,7 +150,7 @@ func (v *ciliumNetworkPolicyValidator) gatherPolicies(cnp *unstructured.Unstruct
 	return egressPolicies, ingressPolicies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRule(rule map[string]interface{}, ruleKey cilium.RuleKey, gatherFunc func(interface{}) ([]string, error)) ([]string, []string, error) {
+func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRule(rule map[string]any, ruleKey cilium.RuleKey, gatherFunc func(any) ([]string, error)) ([]string, []string, error) {
 	egressPolicies, err := v.gatherPoliciesFromRuleType(rule, cilium.EgressRule, ruleKey, gatherFunc)
 	if err != nil {
 		return nil, nil, err
@@ -162,7 +162,7 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRule(rule map[string]in
 	return egressPolicies, ingressPolicies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRuleType(rule map[string]interface{}, ruleType cilium.RuleType, ruleKey cilium.RuleKey, gatherFunc func(interface{}) ([]string, error)) ([]string, error) {
+func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRuleType(rule map[string]any, ruleType cilium.RuleType, ruleKey cilium.RuleKey, gatherFunc func(any) ([]string, error)) ([]string, error) {
 	var policies []string
 	subRules, found, err := unstructured.NestedSlice(rule, ruleType.Type)
 	if !found {
@@ -172,7 +172,7 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRuleType(rule map[strin
 		return nil, err
 	}
 	for _, r := range subRules {
-		rMap, ok := r.(map[string]interface{})
+		rMap, ok := r.(map[string]any)
 		if !ok {
 			return nil, fmt.Errorf("unexpected policy format")
 		}
@@ -185,12 +185,12 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromRuleType(rule map[strin
 	return policies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromStringRule(rule interface{}) ([]string, error) {
+func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromStringRule(rule any) ([]string, error) {
 	if rule == nil {
 		return nil, nil
 	}
 	var policies []string
-	stringRules, ok := rule.([]interface{})
+	stringRules, ok := rule.([]any)
 	if !ok {
 		return nil, fmt.Errorf("unexpected entity strings format")
 	}
@@ -207,17 +207,17 @@ func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromStringRule(rule interfa
 	return policies, nil
 }
 
-func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRSetRule(rule interface{}) ([]string, error) {
+func (v *ciliumNetworkPolicyValidator) gatherPoliciesFromCIDRSetRule(rule any) ([]string, error) {
 	if rule == nil {
 		return nil, nil
 	}
-	cidrSetRules, ok := rule.([]interface{})
+	cidrSetRules, ok := rule.([]any)
 	if !ok {
 		return nil, fmt.Errorf("unexpected CIDRSet policies format")
 	}
 	var policies []string
 	for _, cidrSetRule := range cidrSetRules {
-		cidrSetRule, ok := cidrSetRule.(map[string]interface{})
+		cidrSetRule, ok := cidrSetRule.(map[string]any)
 		if !ok {
 			return nil, fmt.Errorf("unexpected CIDRSet format")
 		}

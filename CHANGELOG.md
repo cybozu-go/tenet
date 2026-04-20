@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-04-20
+### Changed
+- Support k8s 1.35 and bump related tooling and dependencies (#63)
+
 ## [0.13.0] - 2026-02-17
 ### Changed
 - Support k8s 1.34 (#60)
@@ -83,7 +87,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 ### Removed
 
-[Unreleased]: https://github.com/cybozu-go/tenet/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/cybozu-go/tenet/compare/v0.13.1...HEAD
+[0.13.1]: https://github.com/cybozu-go/tenet/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/cybozu-go/tenet/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/cybozu-go/tenet/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/cybozu-go/tenet/compare/v0.10.1...v0.11.0

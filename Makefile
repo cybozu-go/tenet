@@ -232,7 +232,7 @@ SETUP_ENVTEST = $(BIN_DIR)/setup-envtest
 setup-envtest: $(SETUP_ENVTEST) ## Download envtest-setup locally if necessary.
 $(SETUP_ENVTEST):
 	# see https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest
-	GOBIN=$(BIN_DIR) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	GOBIN=$(BIN_DIR) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v$(SETUP_ENVTEST_VERSION)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

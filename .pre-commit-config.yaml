@@ -1,11 +1,11 @@
 default_stages: [pre-commit]
 repos:
   - repo: https://github.com/golangci/golangci-lint
-    rev: v2.11.4
+    rev: 8f3b0c7ed018e57905fbd873c697e0b1ede605a5 # v2.11.4
     hooks:
       - id: golangci-lint
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # v6.0.0
     hooks:
       - id: check-merge-conflict
       - id: check-toml

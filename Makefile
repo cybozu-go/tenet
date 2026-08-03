@@ -80,6 +80,8 @@ vet: ## Run go vet against code.
 
 .PHONY: lint
 lint:
+	aqua install
+	golangci-lint run
 	if [ -z "$(shell which pre-commit)" ]; then pip3 install pre-commit; fi
 	pre-commit install
 	pre-commit run --all-files

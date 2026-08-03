@@ -77,7 +77,7 @@ func (r *NetworkPolicyTemplateReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if npt.ObjectMeta.DeletionTimestamp.IsZero() {
+	if npt.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(npt, finalizerName) {
 			controllerutil.AddFinalizer(npt, finalizerName)
 			if err := r.Update(ctx, npt); err != nil {

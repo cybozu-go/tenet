@@ -1,14 +1,12 @@
 version: "2"
 linters:
   enable:
-    - dupl
-    - gocognit
-    - goconst
-    - gocyclo
-    - godot
+    - depguard
+    - ginkgolinter
+    - govet
+    - modernize
     - nilerr
-    - revive
-    - unparam
+    - staticcheck
   exclusions:
     generated: lax
     presets:
@@ -16,16 +14,24 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+  settings:
+    depguard:
+      rules:
+        restricted-packages:
+          files:
+            - $all
+          deny:
+            - pkg: html/template$
+              desc: html/template must not be used
+            - pkg: log$
+              desc: log must not be used
 formatters:
   enable:
-    - gofmt
+    - gofumpt
+    - goimports
   exclusions:
     generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/cybozu-go/network-policy-viewer

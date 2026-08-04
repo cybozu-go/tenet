@@ -193,7 +193,7 @@ var _ = Describe("NetworkPolicyTemplate", func() {
 		err := y.Decode(userCNP)
 		Expect(err).NotTo(HaveOccurred())
 
-		var checkCNPSpec = func() error {
+		checkCNPSpec := func() error {
 			out, err := kubectl(nil, "get", "-n", nsName, "CiliumNetworkPolicy", allowIntraNSEgressPolicyName, "-o", "json")
 			if err != nil {
 				return err

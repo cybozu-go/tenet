@@ -6,6 +6,8 @@ on:
       - 'main'
     tags-ignore:
       - '*'
+permissions:
+  contents: read
 jobs:
   build:
     name: Build

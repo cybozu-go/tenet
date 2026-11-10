@@ -18,6 +18,7 @@ package v1beta2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // NetworkPolicyTemplateStatus defines the observed state of NetworkPolicyTemplate
@@ -66,5 +67,8 @@ type NetworkPolicyTemplateList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&NetworkPolicyTemplate{}, &NetworkPolicyTemplateList{})
+	SchemeBuilder.Register(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(GroupVersion, &NetworkPolicyTemplate{}, &NetworkPolicyTemplateList{})
+		return nil
+	})
 }

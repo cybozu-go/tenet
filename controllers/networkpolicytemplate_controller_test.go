@@ -14,7 +14,6 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -80,9 +79,7 @@ spec:
 
 func newDummyNetworkPolicyTemplate(o client.ObjectKey, tmpl string) *tenetv1beta2.NetworkPolicyTemplate {
 	return &tenetv1beta2.NetworkPolicyTemplate{
-		ObjectMeta: v1.ObjectMeta{
-			Name: o.Name,
-		},
+		Name: o.Name,
 		Spec: tenetv1beta2.NetworkPolicyTemplateSpec{
 			PolicyTemplate: tmpl,
 		},
@@ -316,8 +313,12 @@ var _ = Describe("Tenet controller", func() {
 			}
 			return k8sClient.Get(ctx, key, cnp)
 		}).Should(Succeed())
-		unstructured.RemoveNestedField(cnp.UnstructuredContent(), "spec", "egress")
-		err := k8sClient.Update(ctx, cnp)
+		egress, _, err := unstructured.NestedSlice(cnp.UnstructuredContent(), "spec", "egress")
+		Expect(err).NotTo(HaveOccurred())
+		egress = append(egress, map[string]any{"toEntities": []any{"world"}})
+		err = unstructured.SetNestedSlice(cnp.UnstructuredContent(), egress, "spec", "egress")
+		Expect(err).NotTo(HaveOccurred())
+		err = k8sClient.Update(ctx, cnp)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() error {
@@ -328,8 +329,8 @@ var _ = Describe("Tenet controller", func() {
 			}
 			err := k8sClient.Get(ctx, key, cnp)
 			Expect(err).NotTo(HaveOccurred())
-			_, hasEgress, err := unstructured.NestedSlice(cnp.UnstructuredContent(), "spec", "egress")
-			if !hasEgress || err != nil {
+			egress, _, err := unstructured.NestedSlice(cnp.UnstructuredContent(), "spec", "egress")
+			if err != nil || len(egress) != 1 {
 				return fmt.Errorf("CiliumNetworkPolicy not reconciled")
 			}
 			return nil

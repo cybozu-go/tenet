@@ -275,9 +275,9 @@ func (r *NetworkPolicyTemplateReconciler) SetupWithManager(ctx context.Context, 
 
 		requests := make([]reconcile.Request, len(nptl.Items))
 		for i, npt := range nptl.Items {
-			requests[i] = reconcile.Request{NamespacedName: types.NamespacedName{
+			requests[i] = reconcile.Request{
 				Name: npt.Name,
-			}}
+			}
 		}
 		return requests
 	}

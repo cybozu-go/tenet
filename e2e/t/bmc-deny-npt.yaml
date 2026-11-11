@@ -8,8 +8,8 @@ spec:
       kind: CiliumNetworkPolicy
       spec:
         endpointSelector: {}
-      egressDeny:
-      - toCIDRSet:
-          - cidr: 10.72.16.0/20
-          - cidr: 10.76.16.0/20
-          - cidr: 10.78.16.0/20
+        egressDeny:
+        - toCIDRSet:
+            - cidr: 10.72.16.0/20
+            - cidr: 10.76.16.0/20
+            - cidr: 10.78.16.0/20

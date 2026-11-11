@@ -313,8 +313,12 @@ var _ = Describe("Tenet controller", func() {
 			}
 			return k8sClient.Get(ctx, key, cnp)
 		}).Should(Succeed())
-		unstructured.RemoveNestedField(cnp.UnstructuredContent(), "spec", "egress")
-		err := k8sClient.Update(ctx, cnp)
+		egress, _, err := unstructured.NestedSlice(cnp.UnstructuredContent(), "spec", "egress")
+		Expect(err).NotTo(HaveOccurred())
+		egress = append(egress, map[string]any{"toEntities": []any{"world"}})
+		err = unstructured.SetNestedSlice(cnp.UnstructuredContent(), egress, "spec", "egress")
+		Expect(err).NotTo(HaveOccurred())
+		err = k8sClient.Update(ctx, cnp)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() error {
@@ -325,8 +329,8 @@ var _ = Describe("Tenet controller", func() {
 			}
 			err := k8sClient.Get(ctx, key, cnp)
 			Expect(err).NotTo(HaveOccurred())
-			_, hasEgress, err := unstructured.NestedSlice(cnp.UnstructuredContent(), "spec", "egress")
-			if !hasEgress || err != nil {
+			egress, _, err := unstructured.NestedSlice(cnp.UnstructuredContent(), "spec", "egress")
+			if err != nil || len(egress) != 1 {
 				return fmt.Errorf("CiliumNetworkPolicy not reconciled")
 			}
 			return nil

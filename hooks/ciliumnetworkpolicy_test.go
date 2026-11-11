@@ -54,9 +54,7 @@ var _ = Describe("CiliumNetworkPolicy webhook", func() {
 
 	BeforeEach(func() {
 		npar := &tenetv1beta2.NetworkPolicyAdmissionRule{
-			ObjectMeta: v1.ObjectMeta{
-				Name: "default-rule",
-			},
+			Name: "default-rule",
 			Spec: tenetv1beta2.NetworkPolicyAdmissionRuleSpec{
 				NamespaceSelector: tenetv1beta2.NetworkPolicyAdmissionRuleNamespaceSelector{
 					ExcludeLabels: map[string]string{

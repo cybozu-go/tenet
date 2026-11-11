@@ -14,7 +14,6 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -80,9 +79,7 @@ spec:
 
 func newDummyNetworkPolicyTemplate(o client.ObjectKey, tmpl string) *tenetv1beta2.NetworkPolicyTemplate {
 	return &tenetv1beta2.NetworkPolicyTemplate{
-		ObjectMeta: v1.ObjectMeta{
-			Name: o.Name,
-		},
+		Name: o.Name,
 		Spec: tenetv1beta2.NetworkPolicyTemplateSpec{
 			PolicyTemplate: tmpl,
 		},

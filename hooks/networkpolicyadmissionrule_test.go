@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	tenetv1beta2 "github.com/cybozu-go/tenet/api/v1beta2"
 )
@@ -16,9 +15,7 @@ var _ = Describe("NetworkPolicyAdmissionRule webhook", func() {
 
 	It("should deny the creation of a NetworkPolicyAdmissionRule with malformed CIDR", func() {
 		npar := &tenetv1beta2.NetworkPolicyAdmissionRule{
-			ObjectMeta: v1.ObjectMeta{
-				Name: uuid.NewString(),
-			},
+			Name: uuid.NewString(),
 			Spec: tenetv1beta2.NetworkPolicyAdmissionRuleSpec{
 				ForbiddenIPRanges: []tenetv1beta2.NetworkPolicyAdmissionRuleForbiddenIPRanges{
 					{
@@ -34,10 +31,8 @@ var _ = Describe("NetworkPolicyAdmissionRule webhook", func() {
 
 	It("should deny the creation of a NetworkPolicyAdmissionRule without connection type", func() {
 		npar := &tenetv1beta2.NetworkPolicyAdmissionRule{
-			ObjectMeta: v1.ObjectMeta{
-				Name:      uuid.NewString(),
-				Namespace: "default",
-			},
+			Name:      uuid.NewString(),
+			Namespace: "default",
 			Spec: tenetv1beta2.NetworkPolicyAdmissionRuleSpec{
 				ForbiddenIPRanges: []tenetv1beta2.NetworkPolicyAdmissionRuleForbiddenIPRanges{
 					{
@@ -52,10 +47,8 @@ var _ = Describe("NetworkPolicyAdmissionRule webhook", func() {
 
 	It("should allow valid NetworkPolicyAdmissionRules", func() {
 		npar := &tenetv1beta2.NetworkPolicyAdmissionRule{
-			ObjectMeta: v1.ObjectMeta{
-				Name:      uuid.NewString(),
-				Namespace: "default",
-			},
+			Name:      uuid.NewString(),
+			Namespace: "default",
 			Spec: tenetv1beta2.NetworkPolicyAdmissionRuleSpec{
 				ForbiddenIPRanges: []tenetv1beta2.NetworkPolicyAdmissionRuleForbiddenIPRanges{
 					{

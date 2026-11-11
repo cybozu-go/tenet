@@ -18,6 +18,7 @@ package v1beta2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // NetworkPolicyAdmissionRuleStatus defines the observed state of NetworkPolicyAdmissionRule.
@@ -99,5 +100,8 @@ type NetworkPolicyAdmissionRuleList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&NetworkPolicyAdmissionRule{}, &NetworkPolicyAdmissionRuleList{})
+	SchemeBuilder.Register(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(GroupVersion, &NetworkPolicyAdmissionRule{}, &NetworkPolicyAdmissionRuleList{})
+		return nil
+	})
 }

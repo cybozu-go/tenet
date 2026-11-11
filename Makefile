@@ -94,9 +94,9 @@ crds:
 
 .PHONY: test
 test: manifests generate fmt vet crds setup-envtest ## Run tests.
-	source <($(SETUP_ENVTEST) use -p env); \
+	source <($(SETUP_ENVTEST) use -p env $(ENVTEST_K8S_VERSION)); \
 		go test -v -count 1 -race ./controllers -ginkgo.v -ginkgo.fail-fast -coverprofile controllers-cover.out
-	source <($(SETUP_ENVTEST) use -p env); \
+	source <($(SETUP_ENVTEST) use -p env $(ENVTEST_K8S_VERSION)); \
 		go test -v -count 1 -race ./hooks -ginkgo.v -coverprofile hooks-cover.out
 
 ##@ Build
@@ -230,6 +230,8 @@ list-actions: ## List used GitHub Actions
 
 ##@ Test
 SETUP_ENVTEST = $(BIN_DIR)/setup-envtest
+# Use the envtest assets matching the minor version of KUBERNETES_VERSION.
+ENVTEST_K8S_VERSION := $(shell echo $(KUBERNETES_VERSION) | cut -d. -f1-2).x
 .PHONY: setup-envtest
 setup-envtest: $(SETUP_ENVTEST) ## Download envtest-setup locally if necessary.
 $(SETUP_ENVTEST):

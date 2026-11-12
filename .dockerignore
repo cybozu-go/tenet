@@ -2,4 +2,4 @@
 # Ignore build and test binaries.
 *
 !LICENSE
-!tenet
+!linux/*/tenet

@@ -21,7 +21,7 @@ help:
 .PHONY: start
 start: $(KIND) $(KUBECTL) $(HELM)
 	$(KIND) create cluster --name=$(PROJECT_NAME) --config=$(KIND_CONFIG) --image=kindest/node:v$(KUBERNETES_VERSION) --wait 1m
-	cd ..; CGO_ENABLED=0 go build -o $(PROJECT_NAME) cmd/tenet-controller/main.go
+	cd ..; CGO_ENABLED=0 go build -o linux/$$(go env GOARCH)/$(PROJECT_NAME) ./cmd/tenet-controller
 	cd ..; docker build --no-cache -t $(PROJECT_NAME):dev .
 	$(KIND) load docker-image $(PROJECT_NAME):dev --name=$(PROJECT_NAME)
 	$(KUBECTL) apply -f https://github.com/jetstack/cert-manager/releases/download/v$(CERT_MANAGER_VERSION)/cert-manager.yaml
